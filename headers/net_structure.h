@@ -10,15 +10,16 @@
 #include <pcap.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
+#include <algorithm>
 
 const u_char TCP = 0x06;
 const u_char UDP = 0x11;
 
 typedef struct ethernet_header {
-    u_char dst_mac[6];        // Destination MAC address
-    u_char src_mac[6];        // Source MAC address
-    u_short type;            // Protocol Type, e.g. 0x0800 for IPv4£¬0x0806 for ARP
+    u_char dst_mac[6];          // Destination MAC address
+    u_char src_mac[6];          // Source MAC address
+    u_short type;               // Protocol Type, e.g. 0x0800 for IPv4£¬0x0806 for ARP
 } ethernet_header;
 
 /* 4 bytes IP address */
@@ -31,25 +32,25 @@ typedef struct ip_address {
 
 /* IPv4 header */
 typedef struct ip_header {
-    u_char ver_ihl;        // Version (4 bits) + Internet header length (4 bits)
-    u_char tos;            // Type of service
-    u_short tlen;           // Total length
-    u_short identification; // Identification
-    u_short flags_fo;       // Flags (3 bits) + Fragment offset (13 bits)
-    u_char ttl;            // Time to live
-    u_char proto;          // Protocol
-    u_short crc;            // Header checksum
-    ip_address saddr;      // Source address
-    ip_address daddr;      // Destination address
-    u_int op_pad;         // Option + Padding
+    u_char ver_ihl;             // Version (4 bits) + Internet header length (4 bits)
+    u_char tos;                 // Type of service
+    u_short tlen;               // Total length
+    u_short identification;     // Identification
+    u_short flags_fo;           // Flags (3 bits) + Fragment offset (13 bits)
+    u_char ttl;                 // Time to live
+    u_char proto;               // Protocol
+    u_short crc;                // Header checksum
+    ip_address saddr;           // Source address
+    ip_address daddr;           // Destination address
+    u_int op_pad;               // Option + Padding
 } ip_header;
 
 /* UDP header*/
 typedef struct udp_header {
-    u_short sport;          // Source port
-    u_short dport;          // Destination port
-    u_short len;            // Datagram length
-    u_short crc;            // Checksum
+    u_short sport;              // Source port
+    u_short dport;              // Destination port
+    u_short len;                // Datagram length
+    u_short crc;                // Checksum
 } udp_header;
 
 /*TCP header*/
@@ -82,5 +83,10 @@ typedef struct arp_packet {
     struct arp_header arp_hdr;
     //u_char padding[14];
 } arp_packet;
+
+// deceive the receiver into thinking that 'target_ip' is at 'sender_mac'.
+arp_packet *arp_packet_constructor(u_char sender_ip[4], u_char sender_mac[6],
+                                   u_char receiver_ip[4], u_char receiver_mac[6],
+                                   u_char target_ip[6]);
 
 #endif //ARP_SPOOFER_NET_STRUCTURE_H
