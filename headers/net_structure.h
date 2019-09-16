@@ -1,7 +1,3 @@
-//
-// Created by rileywen on 18-9-21.
-//
-
 #ifndef ARP_SPOOFER_NET_STRUCTURE_H
 #define ARP_SPOOFER_NET_STRUCTURE_H
 
@@ -32,17 +28,17 @@ typedef struct ip_address {
 
 /* IPv4 header */
 typedef struct ip_header {
-    u_char ver_ihl;             // Version (4 bits) + Internet header length (4 bits)
-    u_char tos;                 // Type of service
-    u_short tlen;               // Total length
-    u_short identification;     // Identification
-    u_short flags_fo;           // Flags (3 bits) + Fragment offset (13 bits)
-    u_char ttl;                 // Time to live
-    u_char proto;               // Protocol
-    u_short crc;                // Header checksum
-    ip_address saddr;           // Source address
-    ip_address daddr;           // Destination address
-    u_int op_pad;               // Option + Padding
+    u_char ver_ihl;                 // Version (4 bits) + Internet header length (4 bits)
+    u_char tos;                     // Type of service
+    u_short total_len;              // Total length
+    u_short identification;         // Identification
+    u_short flags_fo;               // Flags (3 bits) + Fragment offset (13 bits)
+    u_char ttl;                     // Time to live
+    u_char proto;                   // Protocol
+    u_short crc;                    // Header checksum
+    ip_address source_addr;         // Source address
+    ip_address destination_addr;    // Destination address
+    u_int op_pad;                   // Option + Padding
 } ip_header;
 
 /* UDP header*/
@@ -71,7 +67,7 @@ typedef struct arp_header {
     u_short proto_type;
     u_char hardware_size;
     u_char proto_size;
-    u_short opcode;
+    u_short op_code;
     u_char src_mac[6];
     u_char src_ip[4];
     u_char dst_mac[6];
@@ -81,12 +77,14 @@ typedef struct arp_header {
 typedef struct arp_packet {
     struct ethernet_header eth_hdr;
     struct arp_header arp_hdr;
-    //u_char padding[14];
+    u_char padding[18];     // 'Padding' MUST be added because an Ethernet frame
+    //  should be at least 64 bytes. The last 4 bytes of
+    //  a frame is FCS, so arp_packet should be padded
+    //  60 bytes.
 } arp_packet;
 
 // deceive the receiver into thinking that 'target_ip' is at 'sender_mac'.
-arp_packet *arp_packet_constructor(u_char sender_ip[4], u_char sender_mac[6],
-                                   u_char receiver_ip[4], u_char receiver_mac[6],
-                                   u_char target_ip[6]);
+arp_packet *arp_packet_constructor(u_char cheating_ip[4], u_char mac_of_cheating_ip[6],
+                                   u_char receiver_ip[4], u_char receiver_mac[6]);
 
-#endif //ARP_SPOOFER_NET_STRUCTURE_H
+#endif

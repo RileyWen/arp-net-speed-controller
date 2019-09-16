@@ -7,7 +7,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include(CMake-Addons/FindPCAP.cmake)
 
 
-add_executable(ARP_Spoofer sources/main.cpp headers/net_structure.h sources/AdapterQuery.cpp headers/AdapterQuery.h sources/net_structure.cpp)
+add_executable(ARP_Spoofer sources/main.cpp headers/net_structure.h sources/AdapterQuery.cpp headers/AdapterQuery.h sources/net_structure.cpp sources/ARPSpoofing.cpp headers/ARPSpoofing.h)
 target_link_libraries(ARP_Spoofer ${PCAP_LIBRARY})
 
 SET(CMAKE_CXX_FLAGS -pthread)

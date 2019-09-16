@@ -12,4 +12,4 @@ string list_dev_and_choose_dev();
 
 pcap_t *open_adapter(string &adapter);
 
-#endif //ARP_SPOOFER_ADAPTERQUERY_H
+#endif

