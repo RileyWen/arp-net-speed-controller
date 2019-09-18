@@ -12,19 +12,16 @@
 const u_char TCP = 0x06;
 const u_char UDP = 0x11;
 
+#define MAC(A, B, C, D, E, F) {0x##A,0x##B,0x##C,0x##D,0x##E,0x##F}
+#define IP(A, B, C, D) {A,B,C,D}
+#define EXPAND_IP(array_name) (array_name)[0],(array_name)[1],\
+                              (array_name)[2],(array_name)[3]
+
 typedef struct ethernet_header {
     u_char dst_mac[6];          // Destination MAC address
     u_char src_mac[6];          // Source MAC address
     u_short type;               // Protocol Type, e.g. 0x0800 for IPv4£¬0x0806 for ARP
 } ethernet_header;
-
-/* 4 bytes IP address */
-typedef struct ip_address {
-    u_char byte1;
-    u_char byte2;
-    u_char byte3;
-    u_char byte4;
-} ip_address;
 
 /* IPv4 header */
 typedef struct ip_header {
@@ -36,8 +33,8 @@ typedef struct ip_header {
     u_char ttl;                     // Time to live
     u_char proto;                   // Protocol
     u_short crc;                    // Header checksum
-    ip_address source_addr;         // Source address
-    ip_address destination_addr;    // Destination address
+    u_char source_addr[4];          // Source address
+    u_char destination_addr[4];     // Destination address
     u_int op_pad;                   // Option + Padding
 } ip_header;
 
@@ -86,5 +83,7 @@ typedef struct arp_packet {
 // deceive the receiver into thinking that 'target_ip' is at 'sender_mac'.
 arp_packet *arp_packet_constructor(u_char cheating_ip[4], u_char mac_of_cheating_ip[6],
                                    u_char receiver_ip[4], u_char receiver_mac[6]);
+
+inline bool is_ethernet_frame_carrying_ipv4(u_char *pkt_data);
 
 #endif

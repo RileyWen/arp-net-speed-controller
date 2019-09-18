@@ -27,3 +27,8 @@ arp_packet *arp_packet_constructor(u_char *cheating_ip, u_char *mac_of_cheating_
               0);
     return p_new_arp_packet;
 }
+
+bool is_ethernet_frame_carrying_ipv4(u_char *pkt_data) {
+    constexpr int EH_TYPE_IPV4 = 0x0008;
+    return ((ethernet_header *) pkt_data)->type == EH_TYPE_IPV4;
+}
