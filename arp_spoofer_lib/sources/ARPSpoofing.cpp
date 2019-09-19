@@ -15,9 +15,6 @@ void ARP_packet_sender::m_packet_sending_f(pcap_t *adapter,
         if (m_stop)
             return;
 
-#ifdef DEBUG
-        printf("Sending packet...\n");
-#endif
         // Send down the deceive_dst_packet
         if (pcap_sendpacket(adapter,                    // Adapter
                             (const u_char *) packet,   // buffer with the deceive_dst_packet
