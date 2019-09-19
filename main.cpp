@@ -62,33 +62,34 @@ int main() {
 
     // TODO: Add ARP recovering
 
-    PacketHandler pkt_h(adapter, target_ip);
+    PacketHandler pkt_h(adapter, self_mac,
+                        target_mac, gateway_mac, target_ip);
 
-//    string cmd;
-//    while (cin >> cmd) {
-//        if (cmd == "spoofer_on") {
-//            target_spoofer.start();
-//            gateway_spoofer.start();
-//        }
-//        if (cmd == "spoofer_off") {
-//            target_spoofer.stop();
-//            gateway_spoofer.stop();
-//        }
-//        if (cmd == "exit") {
-//            target_spoofer.stop();
-//            gateway_spoofer.stop();
-//            pkt_h.stop();
-//            pkt_h.stop();
-//            pcap_close(adapter);
-//            return 0;
-//        }
-//        if (cmd == "pkth_on") {
-//            pkt_h.start();
-//        }
-//        if (cmd == "pkth_off") {
-//            pkt_h.stop();
-//        }
-//    }
+    string cmd;
+    while (cin >> cmd) {
+        if (cmd == "so") {
+            target_spoofer.start();
+            gateway_spoofer.start();
+        }
+        if (cmd == "sf") {
+            target_spoofer.stop();
+            gateway_spoofer.stop();
+        }
+        if (cmd == "ex") {
+            target_spoofer.stop();
+            gateway_spoofer.stop();
+            pkt_h.stop();
+            pkt_h.stop();
+            pcap_close(adapter);
+            return 0;
+        }
+        if (cmd == "po") {
+            pkt_h.start();
+        }
+        if (cmd == "pf") {
+            pkt_h.stop();
+        }
+    }
 //
 //    int choose;
 //    scanf("%d",&us);
@@ -148,10 +149,6 @@ int main() {
 //                   header->len);
 //            memcpy(eh->dst_mac, dst_mac, 6);
 //            memcpy(eh->src_mac, src_mac, 6);
-//            pcap_sendpacket(adapter,                                // Adapter
-//                            (const u_char *) pkt_data,   // buffer with the deceive_dst_packet
-//                            header->len                             // size
-//            );
 //
 //        } else if (!memcmp((void *) &ih->saddr, dst_ip, 4)) {
 //            printf("From Target:\t%d.%d.%d.%d\t -> %d.%d.%d.%d\tlen:%d\n",
