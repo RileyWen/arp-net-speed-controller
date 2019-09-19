@@ -14,7 +14,7 @@ u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
 u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
 
 u_char gateway_ip[4] = IP_ARRAY(192, 168, 43, 1);
-u_char gateway_mac[6] = MAC_ARRAY(22, 47, da, d1, 88, 8c);
+u_char gateway_mac[6] = MAC_ARRAY(22, 47, da, 58, 88, 8c);
 
 u_char self_ip[4] = IP_ARRAY(192, 168, 43, 215);
 u_char self_mac[6] = MAC_ARRAY(58, 91, CF, 98, 7B, FF);
