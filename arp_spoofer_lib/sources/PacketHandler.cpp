@@ -33,7 +33,7 @@ void PacketHandler::packet_handler_f(u_char *param,
                EXPAND_IP(ih->source_addr),
                EXPAND_IP(target_ip));
 
-        if (!will_drop_pkt) {
+        if (!(*will_drop_pkt)) {
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
@@ -56,7 +56,7 @@ void PacketHandler::packet_handler_f(u_char *param,
                EXPAND_IP(target_ip),
                EXPAND_IP(ih->destination_addr));
 
-        if (!will_drop_pkt) {
+        if (!(*will_drop_pkt)) {
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 

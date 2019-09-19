@@ -83,12 +83,14 @@ int main() {
             pcap_close(adapter);
             return 0;
         }
-        if (cmd == "po") {
+        if (cmd == "po")
             pkt_h.start();
-        }
-        if (cmd == "pf") {
+        if (cmd == "pf")
             pkt_h.stop();
-        }
+        if (cmd == "do")
+            pkt_h.set_drop_packet(true);
+        if (cmd == "df")
+            pkt_h.set_drop_packet(false);
     }
 //
 //    int choose;
