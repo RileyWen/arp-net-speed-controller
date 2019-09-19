@@ -23,7 +23,7 @@ void PacketHandler::packet_handler_f(u_char *param,
     }
 
     // If packet is sent from gateway to target
-    if (equal(ih->destination_addr, ih->destination_addr + 3,
+    if (equal(ih->destination_addr, ih->destination_addr + 4,
               target_ip)) {
         printf("To Target:\t%d.%d.%d.%d -> %d.%d.%d.%d\n",
                EXPAND_IP(ih->source_addr),
@@ -46,7 +46,7 @@ void PacketHandler::packet_handler_f(u_char *param,
     }
 
     // If packet is sent from target to gateway
-    if (equal(ih->source_addr, ih->source_addr + 3,
+    if (equal(ih->source_addr, ih->source_addr + 4,
               target_ip)) {
         printf("From Target:\t%d.%d.%d.%d -> %d.%d.%d.%d\n",
                EXPAND_IP(target_ip),
