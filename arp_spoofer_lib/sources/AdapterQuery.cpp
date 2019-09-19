@@ -1,4 +1,4 @@
-#include "../headers/AdapterQuery.h"
+#include "arp_spoofer_lib/headers/AdapterQuery.h"
 #include <unistd.h>
 
 string list_dev_and_choose_dev() {

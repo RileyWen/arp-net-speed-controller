@@ -3,9 +3,12 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <sourceRoots>
-      <file path="$PROJECT_DIR$/CMake-Addons" />
-      <file path="$PROJECT_DIR$/headers" />
-      <file path="$PROJECT_DIR$/sources" />
+      <file path="$PROJECT_DIR$/CMake-Modules" />
+      <file path="$PROJECT_DIR$/arp_spoofer_lib/headers" />
+      <file path="$PROJECT_DIR$/arp_spoofer_lib/sources" />
     </sourceRoots>
+    <libraryRoots>
+      <file path="$PROJECT_DIR$/arp_spoofer_lib" />
+    </libraryRoots>
   </component>
 </project>

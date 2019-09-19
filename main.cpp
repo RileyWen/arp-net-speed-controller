@@ -1,9 +1,10 @@
-#include "headers/AdapterQuery.h"
-#include "headers/net_structure.h"
-#include "headers/ARPSpoofing.h"
-#include "headers/PacketHandler.h"
+#include "arp_spoofer_lib/headers/AdapterQuery.h"
+#include "arp_spoofer_lib/headers/net_structure.h"
+#include "arp_spoofer_lib/headers/ARPSpoofing.h"
+#include "arp_spoofer_lib/headers/PacketHandler.h"
 
 #include <iostream>
+#include <ncurses.h>
 
 using std::cin, std::cout, std::endl;
 
@@ -63,32 +64,32 @@ int main() {
 
     PacketHandler pkt_h(adapter, target_ip);
 
-    string cmd;
-    while (cin >> cmd) {
-        if (cmd == "spoofer_on") {
-            target_spoofer.start();
-            gateway_spoofer.start();
-        }
-        if (cmd == "spoofer_off") {
-            target_spoofer.stop();
-            gateway_spoofer.stop();
-        }
-        if (cmd == "exit") {
-            target_spoofer.stop();
-            gateway_spoofer.stop();
-            pkt_h.stop();
-            pkt_h.stop();
-            pcap_close(adapter);
-            return 0;
-        }
-        if (cmd == "pkth_on") {
-            pkt_h.start();
-        }
-        if (cmd == "pkth_off") {
-            pkt_h.stop();
-        }
-    }
-
+//    string cmd;
+//    while (cin >> cmd) {
+//        if (cmd == "spoofer_on") {
+//            target_spoofer.start();
+//            gateway_spoofer.start();
+//        }
+//        if (cmd == "spoofer_off") {
+//            target_spoofer.stop();
+//            gateway_spoofer.stop();
+//        }
+//        if (cmd == "exit") {
+//            target_spoofer.stop();
+//            gateway_spoofer.stop();
+//            pkt_h.stop();
+//            pkt_h.stop();
+//            pcap_close(adapter);
+//            return 0;
+//        }
+//        if (cmd == "pkth_on") {
+//            pkt_h.start();
+//        }
+//        if (cmd == "pkth_off") {
+//            pkt_h.stop();
+//        }
+//    }
+//
 //    int choose;
 //    scanf("%d",&us);
 //

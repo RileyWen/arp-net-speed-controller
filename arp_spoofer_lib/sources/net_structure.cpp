@@ -1,4 +1,4 @@
-#include "headers/net_structure.h"
+#include "arp_spoofer_lib/headers/net_structure.h"
 
 arp_packet *arp_packet_constructor(u_char *cheating_ip, u_char *mac_of_cheating_ip,
                                    u_char *receiver_ip, u_char *receiver_mac) {

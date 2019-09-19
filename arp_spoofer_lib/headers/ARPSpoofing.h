@@ -7,7 +7,7 @@
 #include <chrono>
 
 #include <pcap.h>
-#include "headers/net_structure.h"
+#include "arp_spoofer_lib/headers/net_structure.h"
 
 using std::function, std::bind;
 using std::atomic;

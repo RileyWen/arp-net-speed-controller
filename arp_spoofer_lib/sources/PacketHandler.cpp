@@ -1,5 +1,5 @@
-#include "headers/net_structure.h"
-#include "headers/PacketHandler.h"
+#include "arp_spoofer_lib/headers/net_structure.h"
+#include "arp_spoofer_lib/headers/PacketHandler.h"
 
 void PacketHandler::packet_handler_f(u_char *param,
                                      const struct pcap_pkthdr *header,

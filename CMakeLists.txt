@@ -6,9 +6,16 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
-include(CMake-Addons/FindPCAP.cmake)
+include(CMake-Modules/FindPCAP.cmake)
+#include(CMake-Modules/FindCurses.cmake)
 
-add_executable(ARP_Spoofer sources/main.cpp headers/net_structure.h sources/AdapterQuery.cpp headers/AdapterQuery.h sources/net_structure.cpp sources/ARPSpoofing.cpp headers/ARPSpoofing.h sources/PacketHandler.cpp headers/PacketHandler.h)
-target_link_libraries(ARP_Spoofer ${PCAP_LIBRARY})
+add_executable(ARP_Spoofer main.cpp arp_spoofer_lib/headers/net_structure.h
+        arp_spoofer_lib/sources/AdapterQuery.cpp arp_spoofer_lib/headers/AdapterQuery.h
+        arp_spoofer_lib/sources/net_structure.cpp arp_spoofer_lib/sources/ARPSpoofing.cpp
+        arp_spoofer_lib/headers/ARPSpoofing.h arp_spoofer_lib/sources/PacketHandler.cpp
+        arp_spoofer_lib/headers/PacketHandler.h)
+
+target_link_libraries(ARP_Spoofer ${PCAP_LIBRARY})# ${CURSES_LIBRARY})
+
 
 SET(CMAKE_CXX_FLAGS -pthread)
