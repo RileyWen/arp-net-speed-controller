@@ -12,10 +12,14 @@
 const u_char TCP = 0x06;
 const u_char UDP = 0x11;
 
-#define MAC(A, B, C, D, E, F) {0x##A,0x##B,0x##C,0x##D,0x##E,0x##F}
-#define IP(A, B, C, D) {A,B,C,D}
+#define MAC_ARRAY(A, B, C, D, E, F) {0x##A,0x##B,0x##C,0x##D,0x##E,0x##F}
+#define IP_ARRAY(A, B, C, D) {A,B,C,D}
+
 #define EXPAND_IP(array_name) (array_name)[0],(array_name)[1],\
                               (array_name)[2],(array_name)[3]
+#define EXPAND_MAC(array_name) (array_name)[0],(array_name)[1],\
+                              (array_name)[2],(array_name)[3],\
+                              (array_name)[4],(array_name)[5]
 
 typedef struct ethernet_header {
     u_char dst_mac[6];          // Destination MAC address

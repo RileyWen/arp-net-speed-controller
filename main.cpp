@@ -10,17 +10,17 @@ using std::cin, std::cout, std::endl;
 
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
-u_char target_ip[4] = IP(192, 168, 43, 171);
-u_char target_mac[6] = MAC(9c, b6, d0, b9, 1a, 0f);
+u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
+u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
 
-u_char gateway_ip[4] = IP(192, 168, 43, 1);
-u_char gateway_mac[6] = MAC(B0, EB, 57, 6E, C7, 58);
+u_char gateway_ip[4] = IP_ARRAY(192, 168, 43, 1);
+u_char gateway_mac[6] = MAC_ARRAY(B0, EB, 57, 6E, C7, 58);
 
-u_char self_ip[4] = IP(192, 168, 43, 215);
-u_char self_mac[6] = MAC(58, 91, CF, 98, 7B, FF);
+u_char self_ip[4] = IP_ARRAY(192, 168, 43, 215);
+u_char self_mac[6] = MAC_ARRAY(58, 91, CF, 98, 7B, FF);
 
-u_char broadcast_ip[4] = IP(0, 0, 0, 0);
-u_char broadcast_mac[6] = MAC(FF, FF, FF, FF, FF, FF);
+u_char broadcast_ip[4] = IP_ARRAY(0, 0, 0, 0);
+u_char broadcast_mac[6] = MAC_ARRAY(FF, FF, FF, FF, FF, FF);
 
 int main() {
     cout << "sizeof(arp_packet): " << sizeof(arp_packet) << endl;
@@ -29,7 +29,8 @@ int main() {
 
     char filter_buf[PCAP_ERRBUF_SIZE];
     bpf_program bpf;
-    sprintf(filter_buf, "ip host %d.%d.%d.%d", EXPAND_IP(target_ip));
+    sprintf(filter_buf, "ether host %02x:%02x:%02x:%02x:%02x:%02x",
+            EXPAND_MAC(target_mac));
 
 #ifdef DEBUG
     printf("filter buf: %s\n", filter_buf);
@@ -39,7 +40,7 @@ int main() {
     if (pcap_compile(adapter, &bpf, filter_buf,
                      1, PCAP_NETMASK_UNKNOWN) < 0) {
         pcap_perror(adapter, "Error occurred when "
-                             "compiling BPF filter: ");
+                             "compiling BPF filter");
         pcap_close(adapter);
         return -1;
     }
