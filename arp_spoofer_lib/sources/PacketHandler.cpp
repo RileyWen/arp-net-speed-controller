@@ -18,10 +18,6 @@ void PacketHandler::packet_handler_f(u_char *param,
     auto *eh = (ethernet_header *) pkt_data;
     auto *ih = (ip_header *) (pkt_data + sizeof(ethernet_header));
 
-#ifdef DEBUG
-    printf("in pcap_loop...\n");
-#endif
-
     if (*to_stop) {
         pcap_breakloop(adapter);
     }
