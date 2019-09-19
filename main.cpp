@@ -29,7 +29,7 @@ int main() {
 
     char filter_buf[PCAP_ERRBUF_SIZE];
     bpf_program bpf;
-    sprintf(filter_buf, "ether host %d:%d:%d:%d:%d:%d",
+    sprintf(filter_buf, "ether host %02x:%02x:%02x:%02x:%02x:%02x",
             EXPAND_MAC(target_mac));
 
 #ifdef DEBUG
