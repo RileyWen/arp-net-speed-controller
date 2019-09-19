@@ -63,7 +63,7 @@ void PacketHandler::packet_handler_f(u_char *param,
                 pcap_perror(adapter, "[packet_handler_f] "
                                      "Error occurred when forwarding packet to "
                                      "gateway: ");
-                *to_stop = true;
+//                *to_stop = true;
             }
         }
     }
