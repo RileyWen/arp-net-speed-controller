@@ -25,9 +25,18 @@ void PacketHandler::packet_handler_f(u_char *param,
     // If packet is sent from gateway to target
     if (equal(ih->destination_addr, ih->destination_addr + 4,
               target_ip)) {
-        printf("To Target:\t%d.%d.%d.%d -> %d.%d.%d.%d\n",
+        printf("To   Target:  %3d.%3d.%3d.%3d -> %3d.%3d.%3d.%3d | %-4d",
                EXPAND_IP(ih->source_addr),
-               EXPAND_IP(target_ip));
+               EXPAND_IP(target_ip),
+	       header->len);
+        
+        if (equal(eh->dst_mac, eh->dst_mac + 6, self_mac))
+            printf(" | From Gateway\n");
+        else if (equal(eh->dst_mac, eh->dst_mac + 6, target_mac))
+            printf(" | Forwarding\n");
+        else
+            printf("\n");
+
 
         if (!(*will_drop_pkt)) {
             std::copy(self_mac, self_mac + 6, eh->src_mac);
@@ -48,9 +57,17 @@ void PacketHandler::packet_handler_f(u_char *param,
     // If packet is sent from target to gateway
     if (equal(ih->source_addr, ih->source_addr + 4,
               target_ip)) {
-        printf("From Target:\t%d.%d.%d.%d -> %d.%d.%d.%d\n",
+        printf("From Target:  %3d.%3d.%3d.%3d -> %3d.%3d.%3d.%3d | %-4d",
                EXPAND_IP(target_ip),
-               EXPAND_IP(ih->destination_addr));
+               EXPAND_IP(ih->destination_addr),
+	       header->len);
+
+        if (equal(eh->dst_mac, eh->dst_mac + 6, self_mac))
+            printf(" | From Target\n");
+        else if (equal(eh->dst_mac, eh->dst_mac + 6, gateway_mac))
+            printf(" | Forwarding\n");
+        else
+            printf("\n");
 
         if (!(*will_drop_pkt)) {
             std::copy(self_mac, self_mac + 6, eh->src_mac);
