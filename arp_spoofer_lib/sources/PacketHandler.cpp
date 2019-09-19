@@ -31,7 +31,7 @@ void PacketHandler::packet_handler_f(u_char *param,
               target_ip)) {
         printf("To Target:\t%d.%d.%d.%d -> %d.%d.%d.%d\n",
                EXPAND_IP(ih->source_addr),
-               EXPAND_IP(ih->destination_addr));
+               EXPAND_IP(target_ip));
 
         if (!(*will_drop_pkt)) {
             std::copy(self_mac, self_mac + 6, eh->src_mac);
@@ -53,7 +53,7 @@ void PacketHandler::packet_handler_f(u_char *param,
     if (equal(ih->source_addr, ih->source_addr + 3,
               target_ip)) {
         printf("From Target:\t%d.%d.%d.%d -> %d.%d.%d.%d\n",
-               EXPAND_IP(ih->source_addr),
+               EXPAND_IP(target_ip),
                EXPAND_IP(ih->destination_addr));
 
         if (!(*will_drop_pkt)) {
