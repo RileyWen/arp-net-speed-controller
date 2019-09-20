@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-using std::mutex, std::scoped_lock, std::condition_variable;
+using std::mutex, std::unique_lock, std::condition_variable;
 using std::queue;
 
 template<typename T>
@@ -15,19 +15,51 @@ private:
     size_t m_size;
     size_t m_capacity;
     mutable mutex m_mtx;
-    condition_variable m_cv_not_full;
-    condition_variable m_cv_not_empty;
+    mutable condition_variable m_cv_not_full;
+    mutable condition_variable m_cv_not_empty;
 
 public:
     explicit concurrent_queue(size_t capacity) : m_size(0), m_capacity(capacity) {}
 
-    void push_back(T element);
+    void push_back(T element) {
+        unique_lock<mutex> lk(m_mtx, std::defer_lock);
+        m_mtx.lock();
 
-    void pop_front();
+        while (m_size > m_capacity)
+            m_cv_not_full.wait(lk);
+        m_q.push(element);
 
-    bool empty() const;
+        if (m_size == 0)
+            m_cv_not_empty.notify_one();
+    }
 
-    const T &front() const;
+    void pop_front() {
+        unique_lock<mutex> lock(m_mtx, std::defer_lock);
+        m_mtx.lock();
+        if (m_size > 0) {
+            m_q.pop();
+
+            if (m_size >= m_capacity)
+                m_cv_not_full.notify_one();
+
+            m_size--;
+        }
+    }
+
+    bool empty() const {
+        unique_lock<mutex> lock(m_mtx, std::defer_lock);
+        m_mtx.lock();
+        return m_size == 0;
+    }
+
+    const T &front() const {
+        unique_lock<mutex> lock(m_mtx, std::defer_lock);
+        m_mtx.lock();
+        while (m_size == 0)
+            m_cv_not_full.wait(lock);
+
+        return m_q.front();
+    }
 };
 
 
