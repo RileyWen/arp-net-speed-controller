@@ -44,10 +44,15 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
-            _to_farward_pkt pkt;
-            pkt.len = header->len;
-            std::copy(pkt_data, pkt_data + (pkt.len), pkt.packet);
-            forwarded_pkt_queue.push_back(pkt);
+            if (pcap_sendpacket(adapter,
+                                (const u_char *) pkt_data,
+                                header->len
+            ) < 0) {
+                pcap_perror(adapter, "[packet_handler_f] "
+                                     "Error occurred when forwarding packet to "
+                                     "target: ");
+//                *to_stop = true;
+            }
         }
     }
 
@@ -70,17 +75,21 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 
-            _to_farward_pkt pkt;
-            pkt.len = header->len;
-            std::copy(pkt_data, pkt_data + (pkt.len), pkt.packet);
-            forwarded_pkt_queue.push_back(pkt);
+            if (pcap_sendpacket(adapter,
+                                (const u_char *) pkt_data,
+                                header->len
+            ) < 0) {
+                pcap_perror(adapter, "[packet_handler_f] "
+                                     "Error occurred when forwarding packet to "
+                                     "gateway: ");
+//                *to_stop = true;
+            }
         }
     }
 }
 
 void PacketHandler::start() {
     stop();
-    start_forwarding_thread();
 
     pkt_handler_args args;
     args.will_drop_pkt = &m_will_drop_pkt;
@@ -105,7 +114,6 @@ void PacketHandler::stop() {
         m_pcap_loop_t.join();
     }
     m_to_stop = false;
-    stop_forwarding_thread();
 }
 
 PacketHandler::PacketHandler(pcap_t *adapter, u_char self_mac[6],
@@ -124,36 +132,15 @@ void PacketHandler::set_drop_packet(bool v) {
 }
 
 void PacketHandler::start_forwarding_thread() {
-    stop_forwarding_thread();
+    auto packet_forwarding_lambda_f
+            = [this](bool &to_stop_forwarding, pkt_queue &pkt_q) {
+                while (!to_stop_forwarding) {
+                    const _to_farward_pkt &pkt = pkt_q.front();
 
-    auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
-            (bool &to_stop_forwarding, pkt_queue &pkt_q) {
-        while (!to_stop_forwarding) {
-            const _to_farward_pkt &pkt = pkt_q.front();
+                }
+            };
 
-            if (pcap_sendpacket(adapter,
-                                (const u_char *) pkt.packet,
-                                pkt.len
-            ) < 0) {
-                pcap_perror(adapter, "[packet_handler_f] "
-                                     "Error occurred when forwarding packet to "
-                                     "gateway: ");
-//                *to_stop = true;
-            }
-
-            pkt_q.pop_front();
-        }
-    };
     m_pcap_forwarding_t = thread(packet_forwarding_lambda_f,
-                                 std::ref(m_to_stop_forwarding),
-                                 std::ref(m_forwarded_pkt_queue));
-}
-
-void PacketHandler::stop_forwarding_thread() {
-    if (m_pcap_forwarding_t.joinable()) {
-        m_to_stop_forwarding = true;
-        m_pcap_forwarding_t.join();
-    }
-    m_to_stop_forwarding = false;
+                                 std::ref(m_to_stop_forwarding));
 }
 

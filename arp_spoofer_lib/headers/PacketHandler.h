@@ -52,7 +52,7 @@ private:
     pcap_t *m_adapter;
     thread m_pcap_loop_t;
     thread m_pcap_forwarding_t;
-    pkt_queue m_forwarded_pkt_queue = pkt_queue(40);
+    pkt_queue m_forwarded_pkt_queue = pkt_queue(100);
 
     u_char m_target_ip[4];
     u_char m_self_mac[6];
