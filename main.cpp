@@ -37,21 +37,21 @@ int main() {
 #endif
 
     // compile bpf filter
-    //if (pcap_compile(adapter, &bpf, filter_buf,
-    //                 1, PCAP_NETMASK_UNKNOWN) < 0) {
-    //    pcap_perror(adapter, "Error occurred when "
-    //                         "compiling BPF filter");
-    //    pcap_close(adapter);
-    //    return -1;
-    //}
+    if (pcap_compile(adapter, &bpf, filter_buf,
+                     1, PCAP_NETMASK_UNKNOWN) < 0) {
+        pcap_perror(adapter, "Error occurred when "
+                             "compiling BPF filter");
+        pcap_close(adapter);
+        return -1;
+    }
 
-    //// set bpf filter on adapter
-    //if (pcap_setfilter(adapter, &bpf) < 0) {
-    //    pcap_perror(adapter, "Error occurred when "
-    //                         "setting BPF filter");
-    //    pcap_close(adapter);
-    //    return -1;
-    //}
+    // set bpf filter on adapter
+    if (pcap_setfilter(adapter, &bpf) < 0) {
+        pcap_perror(adapter, "Error occurred when "
+                             "setting BPF filter");
+        pcap_close(adapter);
+        return -1;
+    }
 
     arp_packet *spoofing_target_packet = arp_packet_constructor(gateway_ip, self_mac,
                                                                 target_ip, target_mac);
