@@ -5,7 +5,7 @@
 #include <mutex>
 #include <condition_variable>
 
-using std::mutex, std::unique_lock, std::condition_variable;
+using std::recursive_mutex, std::unique_lock, std::condition_variable_any;
 using std::queue;
 
 template<typename T>
@@ -14,15 +14,15 @@ private:
     queue<T> m_q;
     size_t m_size;
     size_t m_capacity;
-    mutable mutex m_mtx;
-    mutable condition_variable m_cv_not_full;
-    mutable condition_variable m_cv_not_empty;
+    mutable recursive_mutex m_mtx;
+    mutable condition_variable_any m_cv_not_full;
+    mutable condition_variable_any m_cv_not_empty;
 
 public:
     explicit concurrent_queue(size_t capacity) : m_size(0), m_capacity(capacity) {}
 
     void push_back(T element) {
-        unique_lock<mutex> lk(m_mtx, std::defer_lock);
+        unique_lock<recursive_mutex> lk(m_mtx, std::defer_lock);
         m_mtx.lock();
 
         while (m_size > m_capacity)
@@ -34,7 +34,7 @@ public:
     }
 
     void pop_front() {
-        unique_lock<mutex> lock(m_mtx, std::defer_lock);
+        unique_lock<recursive_mutex> lock(m_mtx, std::defer_lock);
         m_mtx.lock();
         if (m_size > 0) {
             m_q.pop();
@@ -47,13 +47,13 @@ public:
     }
 
     bool empty() const {
-        unique_lock<mutex> lock(m_mtx, std::defer_lock);
+        unique_lock<recursive_mutex> lock(m_mtx, std::defer_lock);
         m_mtx.lock();
         return m_size == 0;
     }
 
     const T &front() const {
-        unique_lock<mutex> lock(m_mtx, std::defer_lock);
+        unique_lock<recursive_mutex> lock(m_mtx, std::defer_lock);
         m_mtx.lock();
         while (m_size == 0)
             m_cv_not_full.wait(lock);
