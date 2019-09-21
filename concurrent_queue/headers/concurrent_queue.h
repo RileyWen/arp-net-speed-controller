@@ -22,8 +22,7 @@ public:
     explicit concurrent_queue(size_t capacity) : m_size(0), m_capacity(capacity) {}
 
     void push_back(T element) {
-        unique_lock<mutex> lk(m_mtx, std::defer_lock);
-        m_mtx.lock();
+        unique_lock<mutex> lk(m_mtx);
 
         while (m_size > m_capacity)
             m_cv_not_full.wait(lk);
@@ -34,8 +33,7 @@ public:
     }
 
     void pop_front() {
-        unique_lock<mutex> lock(m_mtx, std::defer_lock);
-        m_mtx.lock();
+        unique_lock<mutex> lock(m_mtx);
         if (m_size > 0) {
             m_q.pop();
 
@@ -47,14 +45,12 @@ public:
     }
 
     bool empty() const {
-        unique_lock<mutex> lock(m_mtx, std::defer_lock);
-        m_mtx.lock();
+        unique_lock<mutex> lock(m_mtx);
         return m_size == 0;
     }
 
     const T &front() const {
-        unique_lock<mutex> lock(m_mtx, std::defer_lock);
-        m_mtx.lock();
+        unique_lock<mutex> lock(m_mtx);
         while (m_size == 0)
             m_cv_not_full.wait(lock);
 

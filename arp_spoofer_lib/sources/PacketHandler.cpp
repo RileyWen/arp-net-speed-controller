@@ -141,6 +141,7 @@ void PacketHandler::start_forwarding_thread() {
             };
 
     m_pcap_forwarding_t = thread(packet_forwarding_lambda_f,
-                                 std::ref(m_to_stop_forwarding));
+                                 std::ref(m_to_stop_forwarding),
+                                 std::ref(m_forwarded_pkt_queue));
 }
 
