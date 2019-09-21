@@ -24,6 +24,8 @@ public:
 
     void set_drop_packet(bool v);
 
+    void set_rate_limit_kBps(int v);
+
 private:
     typedef struct {
         u_int32_t len;

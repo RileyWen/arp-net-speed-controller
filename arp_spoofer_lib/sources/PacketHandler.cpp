@@ -66,7 +66,7 @@ void PacketHandler::packet_handler_f(u_char *param,
 
                 printf(" | Forwarding");
             } else {
-                printf(" | Rate Exceeded");
+                printf(" | Exceeded %ld kBps", ByteCounter::get_counter());
             }
         } else
             printf(" | Dropped");
@@ -101,7 +101,7 @@ void PacketHandler::packet_handler_f(u_char *param,
 
                 printf(" | Forwarding");
             } else {
-                printf(" | Rate Exceeded");
+                printf(" | Exceeded %ld kBps", ByteCounter::get_counter());
             }
         } else
             printf(" | Dropped");
@@ -186,5 +186,9 @@ void PacketHandler::stop_forwarding_thread() {
         m_pcap_forwarding_t.join();
     }
     m_to_stop_forwarding = false;
+}
+
+void PacketHandler::set_rate_limit_kBps(int v) {
+    m_rate_limit_kBps = long(v) * 1024;
 }
 
