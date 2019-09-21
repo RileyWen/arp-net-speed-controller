@@ -141,13 +141,22 @@ void PacketHandler::set_drop_packet(bool v) {
 }
 
 void PacketHandler::start_forwarding_thread() {
-    auto packet_forwarding_lambda_f
-            = [this](bool &to_stop_forwarding, pkt_queue &pkt_q) {
-                while (!to_stop_forwarding) {
-                    const _to_farward_pkt &pkt = pkt_q.front();
+    auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
+            (bool &to_stop_forwarding, pkt_queue &pkt_q) {
+        while (!to_stop_forwarding) {
+            const _to_farward_pkt &pkt = pkt_q.pop_front();
 
-                }
-            };
+            if (pcap_sendpacket(adapter,
+                                (const u_char *) pkt.packet,
+                                pkt.len
+            ) < 0) {
+                pcap_perror(adapter, "[packet_handler_f] "
+                                     "Error occurred when forwarding packet to "
+                                     "gateway: ");
+//                      *to_stop = true;
+            }
+        }
+    };
 
     m_pcap_forwarding_t = thread(packet_forwarding_lambda_f,
                                  std::ref(m_to_stop_forwarding),
