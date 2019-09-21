@@ -151,7 +151,7 @@ void PacketHandler::start_forwarding_thread() {
     auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
             (bool &to_stop_forwarding, pkt_queue &pkt_q) {
         while (!to_stop_forwarding) {
-            auto pkt = std::move(pkt_q.pop_front());
+            auto pkt = pkt_q.pop_front();
 
             if (pcap_sendpacket(adapter,
                                 (const u_char *) pkt->packet,
