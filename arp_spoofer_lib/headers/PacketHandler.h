@@ -4,12 +4,14 @@
 #include <pcap.h>
 #include <thread>
 #include <string>
+#include <memory>
 
 #include "concurrent_queue/headers/concurrent_queue.h"
 
 using std::thread;
 using std::string;
 using std::equal;
+using std::unique_ptr, std::make_unique;
 
 class PacketHandler {
 public:
@@ -39,7 +41,7 @@ private:
         u_char *target_mac;
         u_char *gateway_mac;
         u_char *target_ip;
-        pkt_queue *forwarded_pkt_queue;
+        unique_ptr<pkt_queue> *forwarded_pkt_queue_ptr;
     } pkt_handler_args;
 
     static void packet_handler_f(u_char *param, const struct pcap_pkthdr *header,
@@ -52,7 +54,7 @@ private:
     pcap_t *m_adapter;
     thread m_pcap_loop_t;
     thread m_pcap_forwarding_t;
-    pkt_queue m_forwarded_pkt_queue = pkt_queue(100);
+    unique_ptr<pkt_queue> m_forwarded_pkt_queue_ptr;
 
     u_char m_target_ip[4];
     u_char m_self_mac[6];

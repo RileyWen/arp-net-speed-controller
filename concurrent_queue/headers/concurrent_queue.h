@@ -17,7 +17,7 @@ private:
     mutable condition_variable m_cv_not_empty;
 
 public:
-    explicit concurrent_queue(size_t capacity) {}
+    explicit concurrent_queue() = default;
 
     void push_back(T element) {
         unique_lock<mutex> lk(m_mtx);
