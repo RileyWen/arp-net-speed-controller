@@ -55,10 +55,11 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
-            auto pkt_ptr = new _to_farward_pkt;
-            pkt_ptr->len = header->len;
-            std::copy(pkt_data, pkt_data + header->len, pkt_ptr->packet);
-            forwarded_pkt_queue.push_back(pkt_ptr);
+            _to_farward_pkt pkt;
+            pkt.len = header->len;
+            pkt.packet_ptr = new u_char[header->len];
+            std::copy(pkt_data, pkt_data + header->len, pkt.packet_ptr);
+            forwarded_pkt_queue.push_back(pkt);
 //            if (pcap_sendpacket(adapter,
 //                                (const u_char *) pkt_data,
 //                                header->len
@@ -90,10 +91,11 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 
-            auto pkt_ptr = new _to_farward_pkt;
-            pkt_ptr->len = header->len;
-            std::copy(pkt_data, pkt_data + header->len, pkt_ptr->packet);
-            forwarded_pkt_queue.push_back(pkt_ptr);
+            _to_farward_pkt pkt;
+            pkt.len = header->len;
+            pkt.packet_ptr = new u_char[header->len];
+            std::copy(pkt_data, pkt_data + header->len, pkt.packet_ptr);
+            forwarded_pkt_queue.push_back(pkt);
 
 //            if (pcap_sendpacket(adapter,
 //                                (const u_char *) pkt_data,
@@ -151,11 +153,11 @@ void PacketHandler::start_forwarding_thread() {
     auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
             (bool &to_stop_forwarding, pkt_queue &pkt_q) {
         while (!to_stop_forwarding) {
-            auto pkt_ptr = pkt_q.pop_front();
+            auto pkt = pkt_q.pop_front();
 
             if (pcap_sendpacket(adapter,
-                                (const u_char *) pkt_ptr->packet,
-                                pkt_ptr->len
+                                (const u_char *) pkt.packet_ptr,
+                                pkt.len
             ) < 0) {
                 pcap_perror(adapter, "[packet_handler_f] "
                                      "Error occurred when forwarding packet to "
@@ -166,7 +168,7 @@ void PacketHandler::start_forwarding_thread() {
                 //  it failed to send the packet!
                 // if we still free 'pkt_ptr' when 'pcap_sendpacket' fails,
                 //  double free will be caused.
-                delete pkt_ptr;
+                delete[] pkt.packet_ptr;
             }
         }
     };

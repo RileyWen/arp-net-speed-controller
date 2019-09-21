@@ -26,10 +26,10 @@ public:
 private:
     typedef struct {
         u_int32_t len;
-        u_char packet[1500];
+        u_char *packet_ptr;
     } _to_farward_pkt;
 
-    typedef concurrent_queue<_to_farward_pkt *> pkt_queue;
+    typedef concurrent_queue<_to_farward_pkt> pkt_queue;
 
     typedef struct {
         bool *to_stop;
