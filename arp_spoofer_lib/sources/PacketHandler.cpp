@@ -151,19 +151,23 @@ void PacketHandler::start_forwarding_thread() {
     auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
             (bool &to_stop_forwarding, pkt_queue &pkt_q) {
         while (!to_stop_forwarding) {
-            auto pkt = pkt_q.pop_front();
+            auto pkt_ptr = pkt_q.pop_front();
 
             if (pcap_sendpacket(adapter,
-                                (const u_char *) pkt->packet,
-                                pkt->len
+                                (const u_char *) pkt_ptr->packet,
+                                pkt_ptr->len
             ) < 0) {
                 pcap_perror(adapter, "[packet_handler_f] "
                                      "Error occurred when forwarding packet to "
                                      "gateway: ");
-//                      *to_stop = true;
+            } else {
+                // delete is written here in 'else' branch because
+                //  'pcap_sendpacket' must have freed the 'pkt_ptr' once when
+                //  it failed to send the packet!
+                // if we still free 'pkt_ptr' when 'pcap_sendpacket' fails,
+                //  double free will be caused.
+                delete pkt_ptr;
             }
-
-            delete pkt;
         }
     };
 
