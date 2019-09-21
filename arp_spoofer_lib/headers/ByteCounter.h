@@ -8,6 +8,7 @@
 #include <atomic>
 #include <csignal>
 #include <unistd.h>
+#include <stdio.h>
 
 using std::atomic, std::signal;
 
@@ -37,6 +38,8 @@ public:
 
     static void sigalrm_handler(int signum) {
         ByteCounter::byte_counter = 0;
+        alarm(1);
+        signal(SIGALRM, ByteCounter::sigalrm_handler);
     }
 
 private:
