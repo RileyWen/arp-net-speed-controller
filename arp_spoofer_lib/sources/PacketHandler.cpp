@@ -154,14 +154,14 @@ void PacketHandler::start_forwarding_thread() {
             (bool &to_stop_forwarding, pkt_queue &pkt_q) {
         while (!to_stop_forwarding) {
             auto pkt = pkt_q.pop_front();
+            auto len = pkt.len;
 
             if (pcap_sendpacket(adapter,
                                 (const u_char *) pkt.packet_ptr,
                                 pkt.len
             ) < 0) {
-                pcap_perror(adapter, "[packet_handler_f] "
-                                     "Error occurred when forwarding packet to "
-                                     "gateway: ");
+                printf("[packet_handler_f] pkt.len: %-4d | ", len);
+                pcap_perror(adapter, "Error occurred when forwarding pkt");
             } else {
                 // delete is written here in 'else' branch because
                 //  'pcap_sendpacket' must have freed the 'pkt_ptr' once when
