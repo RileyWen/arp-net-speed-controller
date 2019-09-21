@@ -5,7 +5,8 @@ PacketHandler::PacketHandler(pcap_t *adapter, u_char self_mac[6],
                              u_char target_mac[6], u_char gateway_mac[6],
                              u_char target_ip[4])
         : m_adapter(adapter), m_to_stop(false),
-          m_to_stop_forwarding(false), m_will_drop_pkt(false) {
+          m_to_stop_forwarding(false), m_will_drop_pkt(false),
+          m_rate_limit_kBps(INT32_MAX) {
     std::copy(target_ip, target_ip + 4, m_target_ip);
     std::copy(self_mac, self_mac + 6, m_self_mac);
     std::copy(gateway_mac, gateway_mac + 6, m_gateway_mac);
@@ -25,6 +26,7 @@ void PacketHandler::packet_handler_f(u_char *param,
     u_char *target_mac = args->target_mac;
     u_char *target_ip = args->target_ip;
     pkt_queue &forwarded_pkt_queue = *(args->forwarded_pkt_queue);
+    long *rate_limit_kBps = args->rate_limit_kBps;
 
 
     // Parse packet data
@@ -44,32 +46,31 @@ void PacketHandler::packet_handler_f(u_char *param,
                header->len);
 
         if (equal(eh->dst_mac, eh->dst_mac + 6, self_mac))
-            printf(" | From Gateway\n");
+            printf(" | From Gateway");
         else if (equal(eh->dst_mac, eh->dst_mac + 6, target_mac))
-            printf(" | Forwarding\n");
-        else
-            printf("\n");
+            printf(" | Forwarding  ");
 
 
         if (!(*will_drop_pkt)) {
-            std::copy(self_mac, self_mac + 6, eh->src_mac);
-            std::copy(target_mac, target_mac + 6, eh->dst_mac);
+            if (ByteCounter::get_counter() < *rate_limit_kBps) {
+                std::copy(self_mac, self_mac + 6, eh->src_mac);
+                std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
-            _to_farward_pkt pkt;
-            pkt.len = header->len;
-            pkt.packet_ptr = new u_char[header->len];
-            std::copy(pkt_data, pkt_data + header->len, pkt.packet_ptr);
-            forwarded_pkt_queue.push_back(pkt);
-//            if (pcap_sendpacket(adapter,
-//                                (const u_char *) pkt_data,
-//                                header->len
-//            ) < 0) {
-//                pcap_perror(adapter, "[packet_handler_f] "
-//                                     "Error occurred when forwarding packet to "
-//                                     "target: ");
-////                *to_stop = true;
-//            }
-        }
+                _to_farward_pkt pkt;
+                pkt.len = header->len;
+                pkt.packet_ptr = new u_char[header->len];
+                std::copy(pkt_data, pkt_data + header->len, pkt.packet_ptr);
+                forwarded_pkt_queue.push_back(pkt);
+
+                ByteCounter::counter_add(header->len);
+
+                printf(" | Forwarding");
+            } else {
+                printf(" | Rate Exceeded");
+            }
+        } else
+            printf(" | Dropped");
+        printf("\n");
     }
 
     // If packet is sent from target to gateway
@@ -81,38 +82,37 @@ void PacketHandler::packet_handler_f(u_char *param,
                header->len);
 
         if (equal(eh->dst_mac, eh->dst_mac + 6, self_mac))
-            printf(" | From Target\n");
+            printf(" | From Target ");
         else if (equal(eh->dst_mac, eh->dst_mac + 6, gateway_mac))
-            printf(" | Forwarding\n");
-        else
-            printf("\n");
+            printf(" | Forwarding  ");
 
         if (!(*will_drop_pkt)) {
-            std::copy(self_mac, self_mac + 6, eh->src_mac);
-            std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
+            if (ByteCounter::get_counter() < *rate_limit_kBps) {
+                std::copy(self_mac, self_mac + 6, eh->src_mac);
+                std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 
-            _to_farward_pkt pkt;
-            pkt.len = header->len;
-            pkt.packet_ptr = new u_char[header->len];
-            std::copy(pkt_data, pkt_data + header->len, pkt.packet_ptr);
-            forwarded_pkt_queue.push_back(pkt);
+                _to_farward_pkt pkt;
+                pkt.len = header->len;
+                pkt.packet_ptr = new u_char[header->len];
+                std::copy(pkt_data, pkt_data + header->len, pkt.packet_ptr);
+                forwarded_pkt_queue.push_back(pkt);
 
-//            if (pcap_sendpacket(adapter,
-//                                (const u_char *) pkt_data,
-//                                header->len
-//            ) < 0) {
-//                pcap_perror(adapter, "[packet_handler_f] "
-//                                     "Error occurred when forwarding packet to "
-//                                     "gateway: ");
-////                *to_stop = true;
-//            }
-        }
+                ByteCounter::counter_add(header->len);
+
+                printf(" | Forwarding");
+            } else {
+                printf(" | Rate Exceeded");
+            }
+        } else
+            printf(" | Dropped");
+        printf("\n");
     }
 }
 
 void PacketHandler::start() {
     stop();
 
+    ByteCounter::start_counter();
     start_forwarding_thread();
 
     pkt_handler_args args;
@@ -124,6 +124,7 @@ void PacketHandler::start() {
     args.gateway_mac = m_gateway_mac;
     args.target_ip = m_target_ip;
     args.forwarded_pkt_queue = &m_forwarded_pkt_queue;
+    args.rate_limit_kBps = &m_rate_limit_kBps;
 
     auto pcap_loop_lambda_f = [this, args]() {
         pcap_loop(m_adapter, 0,
@@ -141,6 +142,7 @@ void PacketHandler::stop() {
     m_to_stop = false;
 
     stop_forwarding_thread();
+    ByteCounter::stop_counter();
 }
 
 void PacketHandler::set_drop_packet(bool v) {

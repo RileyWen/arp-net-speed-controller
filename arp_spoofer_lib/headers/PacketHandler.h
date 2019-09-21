@@ -6,6 +6,7 @@
 #include <string>
 
 #include "concurrent_queue/headers/concurrent_queue.h"
+#include "arp_spoofer_lib/headers/ByteCounter.h"
 
 using std::thread;
 using std::string;
@@ -40,6 +41,7 @@ private:
         u_char *gateway_mac;
         u_char *target_ip;
         pkt_queue *forwarded_pkt_queue;
+        long *rate_limit_kBps;
     } pkt_handler_args;
 
     static void packet_handler_f(u_char *param, const struct pcap_pkthdr *header,
@@ -53,6 +55,8 @@ private:
     thread m_pcap_loop_t;
     thread m_pcap_forwarding_t;
     pkt_queue m_forwarded_pkt_queue;
+
+    long m_rate_limit_kBps;
 
     u_char m_target_ip[4];
     u_char m_self_mac[6];

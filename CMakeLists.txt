@@ -15,7 +15,8 @@ add_executable(ARP_Spoofer main.cpp
         arp_spoofer_lib/sources/net_structure.cpp arp_spoofer_lib/sources/ARPSpoofing.cpp
         arp_spoofer_lib/headers/ARPSpoofing.h arp_spoofer_lib/sources/PacketHandler.cpp
         arp_spoofer_lib/headers/PacketHandler.h
-        concurrent_queue/sources/concurrent_queue.cpp concurrent_queue/headers/concurrent_queue.h)
+        concurrent_queue/headers/concurrent_queue.h
+        arp_spoofer_lib/sources/ByteCounter.cpp arp_spoofer_lib/headers/ByteCounter.h)
 
 target_link_libraries(ARP_Spoofer ${PCAP_LIBRARY})# ${CURSES_LIBRARY})
 
