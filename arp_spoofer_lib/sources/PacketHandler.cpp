@@ -100,6 +100,8 @@ void PacketHandler::packet_handler_f(u_char *param,
 void PacketHandler::start() {
     stop();
 
+    start_forwarding_thread();
+
     pkt_handler_args args;
     args.will_drop_pkt = &m_will_drop_pkt;
     args.to_stop = &m_to_stop;
@@ -124,6 +126,8 @@ void PacketHandler::stop() {
         m_pcap_loop_t.join();
     }
     m_to_stop = false;
+
+    stop_forwarding_thread();
 }
 
 PacketHandler::PacketHandler(pcap_t *adapter, u_char self_mac[6],
@@ -142,6 +146,8 @@ void PacketHandler::set_drop_packet(bool v) {
 }
 
 void PacketHandler::start_forwarding_thread() {
+    stop_forwarding_thread();
+
     auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
             (bool &to_stop_forwarding, pkt_queue &pkt_q) {
         while (!to_stop_forwarding) {
@@ -165,6 +171,10 @@ void PacketHandler::start_forwarding_thread() {
 }
 
 void PacketHandler::stop_forwarding_thread() {
-
+    if (m_pcap_forwarding_t.joinable()) {
+        m_to_stop_forwarding = true;
+        m_pcap_forwarding_t.join();
+    }
+    m_to_stop_forwarding = false;
 }
 
