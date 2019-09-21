@@ -89,7 +89,7 @@ int main() {
             pkt_h.set_drop_packet(false);
         else if (cmd[0] == 'r') {
             int rate_kBps = std::stoi(cmd.substr(1, std::string::npos));
-
+            pkt_h.set_rate_limit_kBps(rate_kBps);
         }
     }
     return 0;
