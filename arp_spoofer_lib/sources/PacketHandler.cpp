@@ -44,15 +44,19 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
-            if (pcap_sendpacket(adapter,
-                                (const u_char *) pkt_data,
-                                header->len
-            ) < 0) {
-                pcap_perror(adapter, "[packet_handler_f] "
-                                     "Error occurred when forwarding packet to "
-                                     "target: ");
-//                *to_stop = true;
-            }
+            _to_farward_pkt pkt;
+            pkt.len = header->len;
+            std::copy(pkt_data, pkt_data + header->len, pkt.packet);
+            forwarded_pkt_queue.push_back(pkt);
+//            if (pcap_sendpacket(adapter,
+//                                (const u_char *) pkt_data,
+//                                header->len
+//            ) < 0) {
+//                pcap_perror(adapter, "[packet_handler_f] "
+//                                     "Error occurred when forwarding packet to "
+//                                     "target: ");
+////                *to_stop = true;
+//            }
         }
     }
 
@@ -75,15 +79,20 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 
-            if (pcap_sendpacket(adapter,
-                                (const u_char *) pkt_data,
-                                header->len
-            ) < 0) {
-                pcap_perror(adapter, "[packet_handler_f] "
-                                     "Error occurred when forwarding packet to "
-                                     "gateway: ");
-//                *to_stop = true;
-            }
+            _to_farward_pkt pkt;
+            pkt.len = header->len;
+            std::copy(pkt_data, pkt_data + header->len, pkt.packet);
+            forwarded_pkt_queue.push_back(pkt);
+
+//            if (pcap_sendpacket(adapter,
+//                                (const u_char *) pkt_data,
+//                                header->len
+//            ) < 0) {
+//                pcap_perror(adapter, "[packet_handler_f] "
+//                                     "Error occurred when forwarding packet to "
+//                                     "gateway: ");
+////                *to_stop = true;
+//            }
         }
     }
 }
