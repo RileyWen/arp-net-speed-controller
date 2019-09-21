@@ -66,7 +66,7 @@ void PacketHandler::packet_handler_f(u_char *param,
 
                 printf(" | Forwarding");
             } else {
-                printf(" | Exceeded %ld kBps", *rate_limit_kBps);
+                printf(" | Exceeded %ld kBps", (*rate_limit_kBps) / 1024);
             }
         } else
             printf(" | Dropped");
@@ -101,7 +101,7 @@ void PacketHandler::packet_handler_f(u_char *param,
 
                 printf(" | Forwarding");
             } else {
-                printf(" | Exceeded %ld kBps", *rate_limit_kBps);
+                printf(" | Exceeded %ld kBps", (*rate_limit_kBps) / 1024);
             }
         } else
             printf(" | Dropped");
