@@ -108,6 +108,7 @@ void PacketHandler::start() {
     args.target_mac = m_target_mac;
     args.gateway_mac = m_gateway_mac;
     args.target_ip = m_target_ip;
+    args.forwarded_pkt_queue = &m_forwarded_pkt_queue;
 
     auto pcap_loop_lambda_f = [this, args]() {
         pcap_loop(m_adapter, 0,
@@ -161,5 +162,9 @@ void PacketHandler::start_forwarding_thread() {
     m_pcap_forwarding_t = thread(packet_forwarding_lambda_f,
                                  std::ref(m_to_stop_forwarding),
                                  std::ref(m_forwarded_pkt_queue));
+}
+
+void PacketHandler::stop_forwarding_thread() {
+
 }
 
