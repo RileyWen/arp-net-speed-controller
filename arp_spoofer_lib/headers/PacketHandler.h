@@ -4,14 +4,12 @@
 #include <pcap.h>
 #include <thread>
 #include <string>
-#include <memory>
 
 #include "concurrent_queue/headers/concurrent_queue.h"
 
 using std::thread;
 using std::string;
 using std::equal;
-using std::shared_ptr, std::make_shared;
 
 class PacketHandler {
 public:
@@ -31,7 +29,7 @@ private:
         u_char packet[1500];
     } _to_farward_pkt;
 
-    typedef concurrent_queue<shared_ptr<_to_farward_pkt>> pkt_queue;
+    typedef concurrent_queue<_to_farward_pkt *> pkt_queue;
 
     typedef struct {
         bool *to_stop;

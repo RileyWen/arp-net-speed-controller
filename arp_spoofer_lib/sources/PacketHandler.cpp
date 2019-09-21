@@ -55,10 +55,10 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
-            auto pkt_ptr = make_shared<_to_farward_pkt>();
+            auto pkt_ptr = new _to_farward_pkt;
             pkt_ptr->len = header->len;
             std::copy(pkt_data, pkt_data + header->len, pkt_ptr->packet);
-            forwarded_pkt_queue.push_back(std::move(pkt_ptr));
+            forwarded_pkt_queue.push_back(pkt_ptr);
 //            if (pcap_sendpacket(adapter,
 //                                (const u_char *) pkt_data,
 //                                header->len
@@ -90,10 +90,10 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 
-            auto pkt_ptr = make_shared<_to_farward_pkt>();
+            auto pkt_ptr = new _to_farward_pkt;
             pkt_ptr->len = header->len;
             std::copy(pkt_data, pkt_data + header->len, pkt_ptr->packet);
-            forwarded_pkt_queue.push_back(std::move(pkt_ptr));
+            forwarded_pkt_queue.push_back(pkt_ptr);
 
 //            if (pcap_sendpacket(adapter,
 //                                (const u_char *) pkt_data,
@@ -162,6 +162,8 @@ void PacketHandler::start_forwarding_thread() {
                                      "gateway: ");
 //                      *to_stop = true;
             }
+
+            delete pkt;
         }
     };
 
