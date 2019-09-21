@@ -10,8 +10,6 @@ PacketHandler::PacketHandler(pcap_t *adapter, u_char self_mac[6],
     std::copy(self_mac, self_mac + 6, m_self_mac);
     std::copy(gateway_mac, gateway_mac + 6, m_gateway_mac);
     std::copy(target_mac, target_mac + 6, m_target_mac);
-
-    m_forwarded_pkt_queue_ptr = make_unique<pkt_queue>();
 }
 
 void PacketHandler::packet_handler_f(u_char *param,
@@ -26,7 +24,7 @@ void PacketHandler::packet_handler_f(u_char *param,
     u_char *gateway_mac = args->gateway_mac;
     u_char *target_mac = args->target_mac;
     u_char *target_ip = args->target_ip;
-    unique_ptr<pkt_queue> &forwarded_pkt_queue_ptr = *(args->forwarded_pkt_queue_ptr);
+    pkt_queue &forwarded_pkt_queue = *(args->forwarded_pkt_queue);
 
 
     // Parse packet data
@@ -57,10 +55,10 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(target_mac, target_mac + 6, eh->dst_mac);
 
-            _to_farward_pkt pkt;
-            pkt.len = header->len;
-            std::copy(pkt_data, pkt_data + header->len, pkt.packet);
-            forwarded_pkt_queue_ptr->push_back(pkt);
+            auto pkt_ptr = make_shared<_to_farward_pkt>();
+            pkt_ptr->len = header->len;
+            std::copy(pkt_data, pkt_data + header->len, pkt_ptr->packet);
+            forwarded_pkt_queue.push_back(std::move(pkt_ptr));
 //            if (pcap_sendpacket(adapter,
 //                                (const u_char *) pkt_data,
 //                                header->len
@@ -92,10 +90,10 @@ void PacketHandler::packet_handler_f(u_char *param,
             std::copy(self_mac, self_mac + 6, eh->src_mac);
             std::copy(gateway_mac, gateway_mac + 6, eh->dst_mac);
 
-            _to_farward_pkt pkt;
-            pkt.len = header->len;
-            std::copy(pkt_data, pkt_data + header->len, pkt.packet);
-            forwarded_pkt_queue_ptr->push_back(pkt);
+            auto pkt_ptr = make_shared<_to_farward_pkt>();
+            pkt_ptr->len = header->len;
+            std::copy(pkt_data, pkt_data + header->len, pkt_ptr->packet);
+            forwarded_pkt_queue.push_back(std::move(pkt_ptr));
 
 //            if (pcap_sendpacket(adapter,
 //                                (const u_char *) pkt_data,
@@ -123,7 +121,7 @@ void PacketHandler::start() {
     args.target_mac = m_target_mac;
     args.gateway_mac = m_gateway_mac;
     args.target_ip = m_target_ip;
-    args.forwarded_pkt_queue_ptr = &m_forwarded_pkt_queue_ptr;
+    args.forwarded_pkt_queue = &m_forwarded_pkt_queue;
 
     auto pcap_loop_lambda_f = [this, args]() {
         pcap_loop(m_adapter, 0,
@@ -151,13 +149,13 @@ void PacketHandler::start_forwarding_thread() {
     stop_forwarding_thread();
 
     auto packet_forwarding_lambda_f = [this, adapter = m_adapter]
-            (bool &to_stop_forwarding, unique_ptr<pkt_queue> &pkt_q) {
+            (bool &to_stop_forwarding, pkt_queue &pkt_q) {
         while (!to_stop_forwarding) {
-            const _to_farward_pkt &pkt = pkt_q->pop_front();
+            auto pkt = std::move(pkt_q.pop_front());
 
             if (pcap_sendpacket(adapter,
-                                (const u_char *) pkt.packet,
-                                pkt.len
+                                (const u_char *) pkt->packet,
+                                pkt->len
             ) < 0) {
                 pcap_perror(adapter, "[packet_handler_f] "
                                      "Error occurred when forwarding packet to "
@@ -169,7 +167,7 @@ void PacketHandler::start_forwarding_thread() {
 
     m_pcap_forwarding_t = thread(packet_forwarding_lambda_f,
                                  std::ref(m_to_stop_forwarding),
-                                 std::ref(m_forwarded_pkt_queue_ptr));
+                                 std::ref(m_forwarded_pkt_queue));
 }
 
 void PacketHandler::stop_forwarding_thread() {

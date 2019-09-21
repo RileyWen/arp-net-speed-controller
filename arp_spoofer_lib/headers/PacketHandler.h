@@ -11,7 +11,7 @@
 using std::thread;
 using std::string;
 using std::equal;
-using std::unique_ptr, std::make_unique;
+using std::shared_ptr, std::make_shared;
 
 class PacketHandler {
 public:
@@ -31,7 +31,7 @@ private:
         u_char packet[1500];
     } _to_farward_pkt;
 
-    typedef concurrent_queue<_to_farward_pkt> pkt_queue;
+    typedef concurrent_queue<shared_ptr<_to_farward_pkt>> pkt_queue;
 
     typedef struct {
         bool *to_stop;
@@ -41,7 +41,7 @@ private:
         u_char *target_mac;
         u_char *gateway_mac;
         u_char *target_ip;
-        unique_ptr<pkt_queue> *forwarded_pkt_queue_ptr;
+        pkt_queue *forwarded_pkt_queue;
     } pkt_handler_args;
 
     static void packet_handler_f(u_char *param, const struct pcap_pkthdr *header,
@@ -54,7 +54,7 @@ private:
     pcap_t *m_adapter;
     thread m_pcap_loop_t;
     thread m_pcap_forwarding_t;
-    unique_ptr<pkt_queue> m_forwarded_pkt_queue_ptr;
+    pkt_queue m_forwarded_pkt_queue;
 
     u_char m_target_ip[4];
     u_char m_self_mac[6];

@@ -19,10 +19,18 @@ private:
 public:
     explicit concurrent_queue() = default;
 
-    void push_back(T element) {
+    void push_back(const T &element) {
         unique_lock<mutex> lk(m_mtx);
 
         m_q.push(element);
+        lk.unlock();
+        m_cv_not_empty.notify_one();
+    }
+
+    void push_back(T &&element) {
+        unique_lock<mutex> lk(m_mtx);
+
+        m_q.push(std::move(element));
         lk.unlock();
         m_cv_not_empty.notify_one();
     }
