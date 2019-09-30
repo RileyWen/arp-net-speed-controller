@@ -45,6 +45,11 @@ public:
         m_q.pop();
         return item;
     }
+
+    bool empty() {
+        unique_lock<mutex> lock(m_mtx);
+        return m_q.empty();
+    }
 };
 
 

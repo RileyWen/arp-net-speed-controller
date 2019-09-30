@@ -3,29 +3,21 @@
 
 #include <pcap.h>
 #include <thread>
+#include <cstring>
 #include <string>
 
 #include "concurrent_queue/headers/concurrent_queue.h"
 #include "arp_spoofer_lib/headers/ByteCounter.h"
 
 using std::thread;
-using std::string;
 using std::equal;
+using std::string;
+using std::strcat, std::strlen;
+
+extern char pkt_handler_buf[128];
+extern char forwarding_t_buf[128];
 
 class PacketHandler {
-public:
-    explicit PacketHandler(pcap_t *adapter, u_char self_mac[6],
-                           u_char target_mac[6], u_char gateway_mac[6],
-                           u_char target_ip[4]);
-
-    void start();
-
-    void stop();
-
-    void set_drop_packet(bool v);
-
-    void set_rate_limit_kBps(int v);
-
 private:
     typedef struct {
         u_int32_t len;
@@ -33,8 +25,10 @@ private:
     } _to_farward_pkt;
 
     typedef concurrent_queue<_to_farward_pkt> pkt_queue;
+    typedef concurrent_queue<string> output_queue;
 
     typedef struct {
+        PacketHandler *_this;
         bool *to_stop;
         bool *will_drop_pkt;
         pcap_t *adapter;
@@ -46,6 +40,20 @@ private:
         long *rate_limit_kBps;
     } pkt_handler_args;
 
+public:
+    explicit PacketHandler(pcap_t *adapter, u_char self_mac[6],
+                           u_char target_mac[6], u_char gateway_mac[6],
+                           u_char target_ip[4], output_queue &output_q);
+
+    void start();
+
+    void stop();
+
+    void set_drop_packet(bool v);
+
+    void set_rate_limit_kBps(int v);
+
+private:
     static void packet_handler_f(u_char *param, const struct pcap_pkthdr *header,
                                  const u_char *pkt_data);
 
@@ -57,6 +65,7 @@ private:
     thread m_pcap_loop_t;
     thread m_pcap_forwarding_t;
     pkt_queue m_forwarded_pkt_queue;
+    output_queue &m_output_queue;
 
     long m_rate_limit_kBps;
 

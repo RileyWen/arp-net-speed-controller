@@ -8,23 +8,47 @@
 
 using std::cin, std::cout, std::endl;
 
-u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
-u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
-
-u_char gateway_ip[4] = IP_ARRAY(192, 168, 43, 1);
-u_char gateway_mac[6] = MAC_ARRAY(22, 47, da, 58, 88, 8c);
-
-u_char self_ip[4] = IP_ARRAY(192, 168, 43, 215);
-u_char self_mac[6] = MAC_ARRAY(58, 91, CF, 98, 7B, FF);
-
-u_char broadcast_ip[4] = IP_ARRAY(0, 0, 0, 0);
-u_char broadcast_mac[6] = MAC_ARRAY(FF, FF, FF, FF, FF, FF);
+const short STATUS_COLOR_PAIR = 1;
+concurrent_queue<string> output_q;
 
 int main() {
-    cout << "sizeof(arp_packet): " << sizeof(arp_packet) << endl;
-    string dev_name = list_dev_and_choose_dev();
-    pcap_t *adapter = open_adapter(dev_name);
+    initscr();
+    use_default_colors();
+//    newterm(nullptr, stderr, stdin);
+//    scrollok(stdscr, true);
+//    nocbreak();
+    noecho();
 
+    if (!has_colors()) {
+        endwin();
+        printf("The terminal does not support color!\n");
+        _exit(-1);
+    }
+
+    start_color();
+    init_pair(STATUS_COLOR_PAIR, COLOR_BLACK, COLOR_GREEN);
+
+    printw("Hello world!\n");
+
+    int winx, winy, curx, cury;
+
+    attron(COLOR_PAIR(STATUS_COLOR_PAIR));
+    mvprintw(LINES - 1, 0, "Here is status bar!");
+    getyx(stdscr, cury, curx);
+    getmaxyx(stdscr, winy, winx);
+    printw("%*c", winx - curx, ' ');
+//    scrl(-1);
+    attroff(COLOR_PAIR(STATUS_COLOR_PAIR));
+//    refresh();
+
+//    for (int i = 0; i <= 10; i++)
+//        printw("#%d This is a Test!\n", i);
+//    getch();
+//    scroll(stdscr);
+    getch();
+    endwin();
+
+#ifdef BPF_FILTER
     char filter_buf[PCAP_ERRBUF_SIZE];
     bpf_program bpf;
     sprintf(filter_buf, "ether host %02x:%02x:%02x:%02x:%02x:%02x",
@@ -35,21 +59,40 @@ int main() {
 #endif
 
     // compile bpf filter
-//    if (pcap_compile(adapter, &bpf, filter_buf,
-//                     1, PCAP_NETMASK_UNKNOWN) < 0) {
-//        pcap_perror(adapter, "Error occurred when "
-//                             "compiling BPF filter");
-//        pcap_close(adapter);
-//        return -1;
-//    }
-//
-//    // set bpf filter on adapter
-//    if (pcap_setfilter(adapter, &bpf) < 0) {
-//        pcap_perror(adapter, "Error occurred when "
-//                             "setting BPF filter");
-//        pcap_close(adapter);
-//        return -1;
-//    }
+    if (pcap_compile(adapter, &bpf, filter_buf,
+                     1, PCAP_NETMASK_UNKNOWN) < 0) {
+        pcap_perror(adapter, "Error occurred when "
+                             "compiling BPF filter");
+        pcap_close(adapter);
+        return -1;
+    }
+
+    // set bpf filter on adapter
+    if (pcap_setfilter(adapter, &bpf) < 0) {
+        pcap_perror(adapter, "Error occurred when "
+                             "setting BPF filter");
+        pcap_close(adapter);
+        return -1;
+    }
+#endif
+
+//#define PACKET_CAPTURE
+#ifdef PACKET_CAPTURE
+    u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
+    u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
+
+    u_char gateway_ip[4] = IP_ARRAY(192, 168, 43, 1);
+    u_char gateway_mac[6] = MAC_ARRAY(22, 47, da, 58, 88, 8c);
+
+    u_char self_ip[4] = IP_ARRAY(192, 168, 43, 215);
+    u_char self_mac[6] = MAC_ARRAY(58, 91, CF, 98, 7B, FF);
+
+    u_char broadcast_ip[4] = IP_ARRAY(0, 0, 0, 0);
+    u_char broadcast_mac[6] = MAC_ARRAY(FF, FF, FF, FF, FF, FF);
+
+    cout << "sizeof(arp_packet): " << sizeof(arp_packet) << endl;
+    string dev_name = list_dev_and_choose_dev();
+    pcap_t *adapter = open_adapter(dev_name);
 
     arp_packet *spoofing_target_packet = arp_packet_constructor(gateway_ip, self_mac,
                                                                 target_ip, target_mac);
@@ -62,7 +105,8 @@ int main() {
     // TODO: Add ARP recovering
 
     PacketHandler pkt_h(adapter, self_mac,
-                        target_mac, gateway_mac, target_ip);
+                        target_mac, gateway_mac,
+                        target_ip, std::ref(output_q));
 
     string cmd;
     while (cin >> cmd) {
@@ -92,5 +136,6 @@ int main() {
             pkt_h.set_rate_limit_kBps(rate_kBps);
         }
     }
+#endif
     return 0;
 }
