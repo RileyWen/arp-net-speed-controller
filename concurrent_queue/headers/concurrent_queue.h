@@ -12,43 +12,61 @@ template<typename T>
 class concurrent_queue {
 private:
     queue<T> m_q;
+    int m_size;
+    int m_capacity;
     mutable mutex m_mtx;
     mutable condition_variable m_cv_not_full;
     mutable condition_variable m_cv_not_empty;
 
 public:
-    explicit concurrent_queue() = default;
+    explicit concurrent_queue(int capacity)
+            : m_capacity(capacity), m_size(0) {}
 
     void push_back(const T &element) {
-        unique_lock<mutex> lk(m_mtx);
+        unique_lock<mutex> lock(m_mtx);
 
-        m_q.push(element);
-        lk.unlock();
+        while (m_size >= m_capacity)
+            m_cv_not_full.wait(lock);
+
+        m_q.push(std::move(element));
+        m_size++;
+
+        lock.unlock();
         m_cv_not_empty.notify_one();
     }
 
     void push_back(T &&element) {
-        unique_lock<mutex> lk(m_mtx);
+        unique_lock<mutex> lock(m_mtx);
+
+        while (m_size >= m_capacity)
+            m_cv_not_full.wait(lock);
 
         m_q.push(std::move(element));
-        lk.unlock();
+        m_size++;
+
+        lock.unlock();
         m_cv_not_empty.notify_one();
     }
 
     T pop_front() {
         unique_lock<mutex> lock(m_mtx);
 
-        while (m_q.empty())
+        while (m_size == 0)
             m_cv_not_empty.wait(lock);
 
         auto item = m_q.front();
         m_q.pop();
+        m_size--;
+
+        lock.unlock();
+        m_cv_not_full.notify_one();
+
         return item;
     }
 
     bool empty() {
         unique_lock<mutex> lock(m_mtx);
-        return m_q.empty();
+        return m_size == 0;
     }
 };
 

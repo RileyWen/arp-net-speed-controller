@@ -27,19 +27,6 @@ private:
     typedef concurrent_queue<_to_farward_pkt> pkt_queue;
     typedef concurrent_queue<string> output_queue;
 
-    typedef struct {
-        PacketHandler *_this;
-        bool *to_stop;
-        bool *will_drop_pkt;
-        pcap_t *adapter;
-        u_char *self_mac;
-        u_char *target_mac;
-        u_char *gateway_mac;
-        u_char *target_ip;
-        pkt_queue *forwarded_pkt_queue;
-        long *rate_limit_kBps;
-    } pkt_handler_args;
-
 public:
     explicit PacketHandler(pcap_t *adapter, u_char self_mac[6],
                            u_char target_mac[6], u_char gateway_mac[6],
@@ -64,7 +51,7 @@ private:
     pcap_t *m_adapter;
     thread m_pcap_loop_t;
     thread m_pcap_forwarding_t;
-    pkt_queue m_forwarded_pkt_queue;
+    pkt_queue m_forwarded_pkt_queue = pkt_queue(100);
     output_queue &m_output_queue;
 
     long m_rate_limit_kBps;

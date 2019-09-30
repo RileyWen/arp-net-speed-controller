@@ -4,49 +4,117 @@
 #include "arp_spoofer_lib/headers/PacketHandler.h"
 
 #include <iostream>
+#include <thread>
+#include <string>
+#include <list>
 #include <ncurses.h>
 
 using std::cin, std::cout, std::endl;
+using std::thread;
+using std::list;
 
 const short STATUS_COLOR_PAIR = 1;
-concurrent_queue<string> output_q;
 
 int main() {
+    int a = 0;
+    concurrent_queue<string> thread_output(100);
+
+    auto producer_f = [&](int idx) {
+        int i = 0;
+        while (!a) {
+            thread_output.push_back(std::to_string(i++));
+//            cout << "[producer " << idx << " ]: " << i++ << endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    };
+
+//    auto consumer_f = [&](int idx) {
+//        int i;
+//        while (!a) {
+//            i = thread_output.pop_front();
+//            cout << "[consumer " << idx << " ]: " << i << endl;
+//            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//        }
+//    };
+
+    thread p1_t(producer_f, 1);
+//    thread p2_t(producer_f, 2);
+//    thread c1_t(consumer_f, 1);
+//    thread c2_t(consumer_f, 2);
+
+#define NOTEST
+#ifdef NOTEST
+    list<string> output_buf;
     initscr();
     use_default_colors();
 //    newterm(nullptr, stderr, stdin);
 //    scrollok(stdscr, true);
 //    nocbreak();
     noecho();
+    timeout(10);
+    curs_set(0);
+    keypad(stdscr, true);
 
     if (!has_colors()) {
         endwin();
         printf("The terminal does not support color!\n");
         _exit(-1);
     }
-
     start_color();
     init_pair(STATUS_COLOR_PAIR, COLOR_BLACK, COLOR_GREEN);
 
-    printw("Hello world!\n");
-
     int winx, winy, curx, cury;
+    const int BUF_SIZE = 100;
+    string cmd_buf;
+    int c;
 
-    attron(COLOR_PAIR(STATUS_COLOR_PAIR));
-    mvprintw(LINES - 1, 0, "Here is status bar!");
-    getyx(stdscr, cury, curx);
-    getmaxyx(stdscr, winy, winx);
-    printw("%*c", winx - curx, ' ');
-//    scrl(-1);
-    attroff(COLOR_PAIR(STATUS_COLOR_PAIR));
+    while ((c = getch()) != 'q') {
+        if (c == KEY_BACKSPACE) {
+            if (!cmd_buf.empty())
+                cmd_buf.pop_back();
+        } else if (isgraph(c) || isspace(c))
+            cmd_buf += char(c);
+
+        if (thread_output.empty())
+            continue;
+
+//        while (!thread_output.empty()) {
+        output_buf.push_front(thread_output.pop_front());
+        if (output_buf.size() > BUF_SIZE)
+            output_buf.pop_back();
+//        }
+
+        getmaxyx(stdscr, winy, winx);
+
+        if (output_buf.empty())
+            continue;
+
+        erase();
+        auto iter = output_buf.begin();
+        for (int now_y = std::min((unsigned long) (LINES - 2), output_buf.size() - 1); now_y >= 0; now_y--) {
+            mvprintw(now_y, 0, "%s", (iter++)->c_str());
+        }
+
+        attron(COLOR_PAIR(STATUS_COLOR_PAIR));
+        mvprintw(LINES - 1, 0, "%s", cmd_buf.c_str());
+        getyx(stdscr, cury, curx);
+        printw("%*c", winx - curx, ' ');
+        attroff(COLOR_PAIR(STATUS_COLOR_PAIR));
+    }
 //    refresh();
 
 //    for (int i = 0; i <= 10; i++)
 //        printw("#%d This is a Test!\n", i);
 //    getch();
 //    scroll(stdscr);
-    getch();
     endwin();
+#endif
+
+    p1_t.join();
+//    p2_t.join();
+//    c1_t.join();
+//    c2_t.join();
+
 
 #ifdef BPF_FILTER
     char filter_buf[PCAP_ERRBUF_SIZE];
@@ -106,7 +174,7 @@ int main() {
 
     PacketHandler pkt_h(adapter, self_mac,
                         target_mac, gateway_mac,
-                        target_ip, std::ref(output_q));
+                        target_ip, std::ref(thread_output));
 
     string cmd;
     while (cin >> cmd) {
