@@ -7,7 +7,7 @@ string list_dev_and_choose_dev() {
     pcap_if_t *interfaces, *temp;
     int i = 0;
     if (pcap_findalldevs(&interfaces, error) == -1) {
-        fprintf(stderr, "\nerror in pcap findall devs");
+        fprintf(stderr, "\nerror in pcap findall devs\n");
         _exit(1);
     }
 
@@ -19,7 +19,13 @@ string list_dev_and_choose_dev() {
     printf("\nEnter the Device Index: ");
 
     int choice;
-    cin >> choice;
+    while (true) {
+        scanf("%d", &choice);
+        if (choice >= 0 && choice < dev_names.size())
+            break;
+        else
+            printf("Invalid input! Reenter the Index: ");
+    }
 
     pcap_freealldevs(interfaces);
 

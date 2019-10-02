@@ -18,8 +18,14 @@ const u_char UDP = 0x11;
 #define EXPAND_IP(array_name) (array_name)[0],(array_name)[1],\
                               (array_name)[2],(array_name)[3]
 #define EXPAND_MAC(array_name) (array_name)[0],(array_name)[1],\
-                              (array_name)[2],(array_name)[3],\
-                              (array_name)[4],(array_name)[5]
+                               (array_name)[2],(array_name)[3],\
+                               (array_name)[4],(array_name)[5]
+
+#define EXPAND_IP_FOR_INPUT(array_name) (&((array_name)[0])),(&((array_name)[1])),\
+                                        (&((array_name)[2])),(&((array_name)[3]))
+#define EXPAND_MAC_FOR_INPUT(array_name) (&((array_name)[0])),(&((array_name)[1])),\
+                                         (&((array_name)[2])),(&((array_name)[3])),\
+                                         (&((array_name)[4])),(&((array_name)[5]))
 
 typedef struct ethernet_header {
     u_char dst_mac[6];          // Destination MAC address
