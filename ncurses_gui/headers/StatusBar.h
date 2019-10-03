@@ -6,9 +6,11 @@
 #include <exception>
 #include <limits>
 
+typedef unsigned long u_long;
+
 using std::string;
 using std::strlen, std::snprintf;
-using ulong_limits = std::numeric_limits<unsigned long>;
+using ulong_limits = std::numeric_limits<u_long>;
 
 class StatusBar {
 public:
@@ -32,7 +34,7 @@ public:
 
     void clear_input_buf();
 
-    unsigned long read_input_buf_as_num();
+    u_long read_input_buf_as_num();
 
     string get_status_bar_str(int win_length);
 

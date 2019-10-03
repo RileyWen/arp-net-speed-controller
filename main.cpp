@@ -11,25 +11,83 @@
 #include <random>
 #include <ncurses.h>
 #include <cstdio>
+#include <regex>
 #include <getopt.h>
 
 using std::thread;
 using std::list;
 using std::atomic_bool;
 using std::fopen, std::fscanf;
+using std::regex;
 
 const short STATUS_COLOR_PAIR = 1;
 
-int main() {
-    extern char *optarg;
-    extern int optind;
+typedef struct CommandLineArgs_ {
+    u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
+    u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
+
+    u_char gateway_ip[4] = IP_ARRAY(192, 168, 43, 1);
+    u_char gateway_mac[6] = MAC_ARRAY(22, 47, da, 58, 88, 8c);
+
+    u_char self_ip[4] = IP_ARRAY(192, 168, 43, 215);
+    u_char self_mac[6] = MAC_ARRAY(58, 91, CF, 98, 7B, FF);
+} CommandLineArgs;
+
+CommandLineArgs parse_cmd_args(int argc, char **argv) {
+    CommandLineArgs args = {};
+
+    static struct option long_opts[] = {
+            {"target-ip",   required_argument, nullptr, 'T'},
+            {"target-mac",  required_argument, nullptr, 't'},
+            {"gateway-ip",  required_argument, nullptr, 'G'},
+            {"gateway-mac", required_argument, nullptr, 'g'},
+            {"self-ip",     required_argument, nullptr, 'S'},
+            {"self-mac",    required_argument, nullptr, 's'},
+            {"help",        no_argument,       nullptr, 'h'},
+            {0, 0,                             0,       0}
+    };
+
+    regex ip_regex(R"(^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$)");
+    regex mac_regex(R"(^([0-9a-fA-F]{1,2}[\.:\-]){5}[0-9a-fA-F]{1,2}$)");
+
+    string target_ip, target_mac, gateway_ip, gateway_mac, self_ip, self_mac;
+
+    int opt, opt_i = 0;
+    while ((opt = getopt_long(argc, argv, "T:G:S:t:g:s:h", long_opts, &opt_i))) {
+        if (opt == -1)
+            break;
+
+        switch (opt) {
+            case 'h':
+                exit(0);
+                break;
+            case 'T':
+                target_ip = optarg;
+                if (!std::regex_match(target_ip, ip_regex))
+                    goto PARSE_FAILED;
+//                if (sscanf(optarg, "%2x%2x:%2x:%2x:%2x:%2x"))
+//                    ;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return args;
+
+    PARSE_FAILED:
+    printf("Invalid command line arguments!");
+    exit(0);
+}
+
+int main(int argc, char **argv) {
     int opt;
     bool window_loop_to_stop = false;
 
     static char usage[] = "Usage: ARP_Spoofer [-I <interface name>] [-M <target MAC>] [-N <target ip>]";
 
     int a = 0;
-    unsigned long rate = 0;
+    u_long rate = 0;
 
     concurrent_queue<string> thread_output(100);
 
@@ -247,14 +305,6 @@ int main() {
 
 //#define PACKET_CAPTURE
 #ifdef PACKET_CAPTURE
-    u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
-    u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
-
-    u_char gateway_ip[4] = IP_ARRAY(192, 168, 43, 1);
-    u_char gateway_mac[6] = MAC_ARRAY(22, 47, da, 58, 88, 8c);
-
-    u_char self_ip[4] = IP_ARRAY(192, 168, 43, 215);
-    u_char self_mac[6] = MAC_ARRAY(58, 91, CF, 98, 7B, FF);
 
     u_char broadcast_ip[4] = IP_ARRAY(0, 0, 0, 0);
     u_char broadcast_mac[6] = MAC_ARRAY(FF, FF, FF, FF, FF, FF);

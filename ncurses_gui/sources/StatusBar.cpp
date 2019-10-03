@@ -63,7 +63,7 @@ void StatusBar::clear_input_buf() {
     m_input_buf.erase();
 }
 
-unsigned long StatusBar::read_input_buf_as_num() {
+u_long StatusBar::read_input_buf_as_num() {
     unsigned long v;
     try {
         v = std::stoul(m_input_buf);
