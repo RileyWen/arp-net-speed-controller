@@ -15,8 +15,12 @@ add_executable(ARP_Spoofer main.cpp
         arp_spoofer_lib/sources/net_structure.cpp arp_spoofer_lib/sources/ARPSpoofing.cpp
         arp_spoofer_lib/headers/ARPSpoofing.h arp_spoofer_lib/sources/PacketHandler.cpp
         arp_spoofer_lib/headers/PacketHandler.h
+        arp_spoofer_lib/sources/ByteCounter.cpp
+        arp_spoofer_lib/headers/ByteCounter.h
         concurrent_queue/headers/concurrent_queue.h
-        arp_spoofer_lib/sources/ByteCounter.cpp arp_spoofer_lib/headers/ByteCounter.h concurrent_queue/sources/semaphore.cpp concurrent_queue/headers/semaphore.h)
+        concurrent_queue/headers/semaphore.h
+        concurrent_queue/sources/semaphore.cpp
+        ncurses_gui/sources/StatusBar.cpp ncurses_gui/headers/StatusBar.h)
 
 target_link_libraries(ARP_Spoofer ${PCAP_LIBRARY} ${CURSES_LIBRARY})
 

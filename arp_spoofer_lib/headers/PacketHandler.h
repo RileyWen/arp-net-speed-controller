@@ -40,6 +40,8 @@ public:
 
     void set_rate_limit_kBps(int v);
 
+    const unsigned long &get_rate_cref() const;
+
 private:
     static void packet_handler_f(u_char *param, const struct pcap_pkthdr *header,
                                  const u_char *pkt_data);
@@ -54,7 +56,7 @@ private:
     pkt_queue m_forwarded_pkt_queue = pkt_queue(100);
     output_queue &m_output_queue;
 
-    long m_rate_limit_kBps;
+    unsigned long m_rate_limit_kBps;
 
     u_char m_target_ip[4];
     u_char m_self_mac[6];

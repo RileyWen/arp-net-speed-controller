@@ -30,7 +30,7 @@ void PacketHandler::packet_handler_f(u_char *param,
     u_char *target_ip = _this->m_target_ip;
     pkt_queue &forwarded_pkt_queue = _this->m_forwarded_pkt_queue;
     output_queue &output_q = _this->m_output_queue;
-    long *rate_limit_kBps = std::addressof(_this->m_rate_limit_kBps);
+    unsigned long *rate_limit_kBps = std::addressof(_this->m_rate_limit_kBps);
 
 
     // Parse packet data
@@ -187,5 +187,9 @@ void PacketHandler::stop_forwarding_thread() {
 
 void PacketHandler::set_rate_limit_kBps(int v) {
     m_rate_limit_kBps = long(v) * 1024;
+}
+
+const unsigned long &PacketHandler::get_rate_cref() const {
+    return std::cref(m_rate_limit_kBps);
 }
 

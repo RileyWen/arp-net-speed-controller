@@ -2,11 +2,13 @@
 #include "arp_spoofer_lib/headers/net_structure.h"
 #include "arp_spoofer_lib/headers/ARPSpoofing.h"
 #include "arp_spoofer_lib/headers/PacketHandler.h"
+#include "ncurses_gui/headers/StatusBar.h"
 
 #include <thread>
 #include <string>
 #include <list>
 #include <atomic>
+#include <random>
 #include <ncurses.h>
 #include <cstdio>
 #include <getopt.h>
@@ -22,21 +24,27 @@ int main() {
     extern char *optarg;
     extern int optind;
     int opt;
+    bool window_loop_to_stop = false;
 
     static char usage[] = "Usage: ARP_Spoofer [-I <interface name>] [-M <target MAC>] [-N <target ip>]";
 
     int a = 0;
-    atomic_bool flag(false);
+    unsigned long rate = 0;
 
     concurrent_queue<string> thread_output(100);
 
     auto producer_f = [&](int idx) {
         int i = 0;
-        while (!a) {
+//        std::random_device rd;
+//        std::mt19937 rng(rd());
+//        std::uniform_int_distribution<unsigned long> uni(0, 100000);
+
+        while (!a && !window_loop_to_stop) {
             thread_output.push_back(std::to_string(i++));
-            flag = true;
-//            cout << "[producer " << idx << " ]: " << i++ << endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//            printf("[producer %d]: %d\n", idx, i++);
+//            rate = uni(rng);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
         }
     };
 
@@ -54,7 +62,160 @@ int main() {
 //    thread c1_t(consumer_f, 1);
 //    thread c2_t(consumer_f, 2);
 
+#define NOTEST
+#ifdef NOTEST
+    constexpr int MIN_WINDOWS_COLS = 90;
+    constexpr int MIN_WINDOWS_LINES = 10;
+    constexpr int ERR_WINDOW_TOO_SMALL = -1;
 
+    list<string> output_buf;
+    int gui_err = 0;
+
+    initscr();
+    use_default_colors();
+//    newterm(nullptr, stderr, stdin);
+//    scrollok(stdscr, true);
+//    nocbreak();
+    noecho();
+    timeout(1);
+    curs_set(0);
+    set_escdelay(25);
+    keypad(stdscr, true);
+
+    if (!has_colors()) {
+        endwin();
+        printf("The terminal does not support color!\n");
+        _exit(-1);
+    }
+    if (COLS < MIN_WINDOWS_COLS || LINES < MIN_WINDOWS_LINES) {
+        window_loop_to_stop = true;
+        gui_err = ERR_WINDOW_TOO_SMALL;
+    }
+    start_color();
+    init_pair(STATUS_COLOR_PAIR, COLOR_BLACK, COLOR_GREEN);
+
+    int winx, winy, curx, cury;
+    const int BUF_SIZE = 100;
+    string cmd_buf;
+    int ch;
+    StatusBar status_bar(std::cref(rate));
+
+    int before_seq = -1;
+    enum GuiState {
+        InputRateMode,
+        EchoMode
+    };
+
+    GuiState gui_state = GuiState::EchoMode;
+    StatusBar::PktPolicy previous_status_bar_policy = StatusBar::PktPolicy::Forward;
+
+    while (true) {
+        if (window_loop_to_stop)
+            break;
+
+        ch = getch();
+        erase();
+
+        getmaxyx(stdscr, winy, winx);
+        if (ch == KEY_RESIZE) {
+            if (COLS < MIN_WINDOWS_COLS || LINES < MIN_WINDOWS_LINES) {
+                window_loop_to_stop = true;
+                gui_err = ERR_WINDOW_TOO_SMALL;
+            }
+        }
+
+        switch (gui_state) {
+            case GuiState::EchoMode: {
+                switch (ch) {
+                    case KEY_F(1):
+                        status_bar.set_pkt_policy(StatusBar::PktPolicy::Forward);
+                        break;
+                    case KEY_F(2):
+                        status_bar.set_pkt_policy(StatusBar::PktPolicy::Drop);
+                        break;
+                    case KEY_F(3):
+                        gui_state = GuiState::InputRateMode;
+                        previous_status_bar_policy = status_bar.get_pkt_policy();
+                        status_bar.set_pkt_policy(StatusBar::PktPolicy::EnteringRateValue);
+                        break;
+                    case 'q':
+                        window_loop_to_stop = true;
+                        break;
+                    default:
+                        /* Do nothing*/;
+                }
+
+                break;
+            }
+            case GuiState::InputRateMode: {
+                switch (ch) {
+                    case KEY_BACKSPACE: {
+                        status_bar.pop_last_of_input_buf();
+                        break;
+                    }
+                    case 10 /*ENTER*/:
+                        gui_state = GuiState::EchoMode;
+
+                        rate = status_bar.read_input_buf_as_num();
+                        if (rate == ulong_limits::max())
+                            goto ENTER_FAILED;
+
+                        status_bar.clear_input_buf();
+                        status_bar.set_pkt_policy(StatusBar::PktPolicy::LimitRate);
+                        break;
+                    case 27 /*KEY_ESC*/:
+                    ENTER_FAILED:
+                        gui_state = GuiState::EchoMode;
+                        status_bar.clear_input_buf();
+                        status_bar.set_pkt_policy(previous_status_bar_policy);
+                        break;
+                    default:
+                        if (isdigit(ch))
+                            status_bar.append_char_to_input_buf(ch);
+                }
+                break;
+            }
+        }
+
+        attron(COLOR_PAIR(STATUS_COLOR_PAIR));
+        mvprintw(LINES - 1, 0, "%s", status_bar.get_status_bar_str(winx).c_str());
+        attroff(COLOR_PAIR(STATUS_COLOR_PAIR));
+
+        if (before_seq == thread_output.m_updated_seq)
+            continue;
+
+        before_seq = thread_output.m_updated_seq;
+        queue<string> ret_q = thread_output.pop_all();
+        while (!ret_q.empty()) {
+            output_buf.push_front(ret_q.front());
+            ret_q.pop();
+            if (output_buf.size() > BUF_SIZE)
+                output_buf.pop_back();
+        }
+
+        if (output_buf.empty())
+            continue;
+
+        auto iter = output_buf.begin();
+        for (int now_y = std::min((unsigned long) (LINES - 2), output_buf.size() - 1); now_y >= 0; now_y--) {
+            mvprintw(now_y, 0, "%s", (iter++)->c_str());
+        }
+
+    }
+    endwin();
+
+    switch (gui_err) {
+        case ERR_WINDOW_TOO_SMALL:
+            printf("Windows size must be at least %dx%d!\n", MIN_WINDOWS_COLS, MIN_WINDOWS_LINES);
+        default:
+            break;
+    }
+
+    p1_t.join();
+//    p2_t.join();
+//    c1_t.join();
+//    c2_t.join();
+#endif
 
 #ifdef BPF_FILTER
     char filter_buf[PCAP_ERRBUF_SIZE];
@@ -84,7 +245,7 @@ int main() {
     }
 #endif
 
-#define PACKET_CAPTURE
+//#define PACKET_CAPTURE
 #ifdef PACKET_CAPTURE
     u_char target_ip[4] = IP_ARRAY(192, 168, 43, 171);
     u_char target_mac[6] = MAC_ARRAY(9c, b6, d0, b9, 1a, 0f);
@@ -121,80 +282,6 @@ int main() {
     PacketHandler pkt_h(adapter, self_mac,
                         target_mac, gateway_mac,
                         target_ip, std::ref(thread_output));
-
-#define NOTEST
-#ifdef NOTEST
-    list<string> output_buf;
-    initscr();
-    use_default_colors();
-//    newterm(nullptr, stderr, stdin);
-//    scrollok(stdscr, true);
-//    nocbreak();
-    noecho();
-    timeout(100);
-    curs_set(0);
-    keypad(stdscr, true);
-
-    if (!has_colors()) {
-        endwin();
-        printf("The terminal does not support color!\n");
-        _exit(-1);
-    }
-    start_color();
-    init_pair(STATUS_COLOR_PAIR, COLOR_BLACK, COLOR_GREEN);
-
-    int winx, winy, curx, cury;
-    const int BUF_SIZE = 100;
-    string cmd_buf;
-    int ch;
-
-    while ((ch = getch()) != 'q') {
-        if (ch == KEY_BACKSPACE) {
-            if (!cmd_buf.empty())
-                cmd_buf.pop_back();
-        } else if (isgraph(ch) || isspace(ch))
-            cmd_buf += char(ch);
-
-        if (thread_output.empty())
-            continue;
-
-//        while (!thread_output.empty()) {
-        output_buf.push_front(thread_output.pop_front());
-        if (output_buf.size() > BUF_SIZE)
-            output_buf.pop_back();
-//        }
-
-        getmaxyx(stdscr, winy, winx);
-
-        if (output_buf.empty())
-            continue;
-
-        erase();
-        auto iter = output_buf.begin();
-        for (int now_y = std::min((unsigned long) (LINES - 2), output_buf.size() - 1); now_y >= 0; now_y--) {
-            mvprintw(now_y, 0, "%s", (iter++)->c_str());
-        }
-
-        attron(COLOR_PAIR(STATUS_COLOR_PAIR));
-        mvprintw(LINES - 1, 0, "%s", cmd_buf.c_str());
-        getyx(stdscr, cury, curx);
-        printw("%*c", winx - curx, ' ');
-        attroff(COLOR_PAIR(STATUS_COLOR_PAIR));
-        flag = false;
-    }
-//    refresh();
-
-//    for (int i = 0; i <= 10; i++)
-//        printw("#%d This is a Test!\n", i);
-//    getch();
-//    scroll(stdscr);
-    endwin();
-
-    p1_t.join();
-//    p2_t.join();
-//    c1_t.join();
-//    c2_t.join();
-#endif
     char input[256];
     string cmd;
     while (scanf("%s", input) != EOF) {

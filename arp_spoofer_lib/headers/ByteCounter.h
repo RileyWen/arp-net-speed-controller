@@ -28,7 +28,7 @@ public:
         ByteCounter::byte_counter += i;
     }
 
-    static long get_counter() {
+    static unsigned long get_counter() {
         return ByteCounter::byte_counter;
     }
 
@@ -43,7 +43,7 @@ public:
     }
 
 private:
-    static atomic<long> byte_counter;
+    static atomic<unsigned long> byte_counter;
 };
 
 #endif //ARP_SPOOFER_BYTECOUNTER_H

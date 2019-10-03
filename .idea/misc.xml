@@ -6,6 +6,8 @@
       <file path="$PROJECT_DIR$/CMake-Modules" />
       <file path="$PROJECT_DIR$/arp_spoofer_lib/headers" />
       <file path="$PROJECT_DIR$/arp_spoofer_lib/sources" />
+      <file path="$PROJECT_DIR$/concurrent_queue" />
+      <file path="$PROJECT_DIR$/ncurses_gui" />
     </sourceRoots>
     <libraryRoots>
       <file path="$PROJECT_DIR$/arp_spoofer_lib" />

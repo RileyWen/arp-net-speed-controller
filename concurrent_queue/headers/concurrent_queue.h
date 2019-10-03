@@ -19,8 +19,10 @@ private:
     mutable condition_variable m_cv_not_empty;
 
 public:
+    int m_updated_seq;
+
     explicit concurrent_queue(int capacity)
-            : m_capacity(capacity), m_size(0) {}
+            : m_capacity(capacity), m_size(0), m_updated_seq(0) {}
 
     void push_back(const T &element) {
         unique_lock<mutex> lock(m_mtx);
@@ -30,6 +32,7 @@ public:
 
         m_q.push(std::move(element));
         m_size++;
+        m_updated_seq++;
 
         lock.unlock();
         m_cv_not_empty.notify_one();
@@ -43,6 +46,7 @@ public:
 
         m_q.push(std::move(element));
         m_size++;
+        m_updated_seq++;
 
         lock.unlock();
         m_cv_not_empty.notify_one();
@@ -64,11 +68,27 @@ public:
         return item;
     }
 
-    bool empty() {
+    queue<T> pop_all() {
+        unique_lock<mutex> lock(m_mtx);
+
+        while (m_size == 0)
+            m_cv_not_empty.wait(lock);
+
+        auto ret_q = queue<T>();
+        std::swap(ret_q, m_q);
+
+        m_size = 0;
+
+        lock.unlock();
+        m_cv_not_full.notify_one();
+
+        return ret_q;
+    }
+
+    bool empty() const {
         unique_lock<mutex> lock(m_mtx);
         return m_size == 0;
     }
 };
 
-
-#endif //ARP_SPOOFER_CONCURRENT_QUEUE_H
+#endif

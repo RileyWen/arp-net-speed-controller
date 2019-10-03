@@ -4,4 +4,4 @@
 
 #include "arp_spoofer_lib/headers/ByteCounter.h"
 
-atomic<long> ByteCounter::byte_counter = 0;
+atomic<unsigned long> ByteCounter::byte_counter = 0;
