@@ -5,7 +5,8 @@ void StatusBar::set_pkt_policy(StatusBar::PktPolicy policy) {
 }
 
 void StatusBar::append_char_to_input_buf(char ch) {
-    m_input_buf += ch;
+    if (m_input_buf.size() < 13)
+        m_input_buf += ch;
 }
 
 void StatusBar::pop_last_of_input_buf() {
@@ -15,7 +16,7 @@ void StatusBar::pop_last_of_input_buf() {
 
 string StatusBar::get_status_bar_str(int win_length) {
     string status_bar_str;
-    const static string echo_mode_shortcut_help("<F1> Forward | <F2> Drop | <F3> Limit Rate");
+    const static string echo_mode_shortcut_help("<F1> Forward | <F2> Drop | <F3> Limit Rate | <q> Exit");
     const static string input_mode_shortcut_help("<Esc> Go Back | <Enter> Set the rate");
 
     switch (m_current_pkt_policy) {

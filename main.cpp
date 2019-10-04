@@ -189,6 +189,7 @@ int main(int argc, char **argv) {
                         break;
                     default:
                         if (isdigit(ch))
+                            // This function limits the maximum input length to 13
                             status_bar.append_char_to_input_buf(ch);
                 }
                 break;
