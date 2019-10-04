@@ -1,5 +1,19 @@
 # ARP Net Speed Controller
 
+## Dependencies
+
+- ncurses
+- libpcap
+
+So before you compile the source code, you should install them.
+
+In `ubuntu`, you can install the dependencies by the following commands:
+
+```bash
+sudo apt install libncurses-dev
+sudo apt-get install libpcap-dev
+```
+
 ## Get & Compile
 
 ```bash
