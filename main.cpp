@@ -201,21 +201,18 @@ int main(int argc, char **argv) {
         attroff(COLOR_PAIR(STATUS_COLOR_PAIR));
 
         // check if any new output arrives
-        if (before_seq == pkt_handler_thread_output_q.m_updated_seq)
-            continue;
+        if (before_seq != pkt_handler_thread_output_q.m_updated_seq) {
 
-        // get all new outputs
-        before_seq = pkt_handler_thread_output_q.m_updated_seq;
-        queue<string> ret_q = pkt_handler_thread_output_q.pop_all();
-        while (!ret_q.empty()) {
-            output_buf.push_front(ret_q.front());
-            ret_q.pop();
-            if (output_buf.size() > BUF_SIZE)
-                output_buf.pop_back();
+            // get all new outputs
+            before_seq = pkt_handler_thread_output_q.m_updated_seq;
+            queue<string> ret_q = pkt_handler_thread_output_q.pop_all();
+            while (!ret_q.empty()) {
+                output_buf.push_front(ret_q.front());
+                ret_q.pop();
+                if (output_buf.size() > BUF_SIZE)
+                    output_buf.pop_back();
+            }
         }
-
-        if (output_buf.empty())
-            continue;
 
         // print output above status bar
         auto iter = output_buf.begin();
