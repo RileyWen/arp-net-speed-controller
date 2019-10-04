@@ -215,9 +215,11 @@ int main(int argc, char **argv) {
         }
 
         // print output above status bar
-        auto iter = output_buf.begin();
-        for (int now_y = std::min((unsigned long) (LINES - 2), output_buf.size() - 1); now_y >= 0; now_y--) {
-            mvprintw(now_y, 0, "%s", (iter++)->c_str());
+        if (!output_buf.empty()) {
+            auto iter = output_buf.begin();
+            for (int now_y = std::min((unsigned long) (LINES - 2), output_buf.size() - 1); now_y >= 0; now_y--) {
+                mvprintw(now_y, 0, "%s", (iter++)->c_str());
+            }
         }
 
     }
