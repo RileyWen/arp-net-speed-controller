@@ -177,8 +177,8 @@ int main(int argc, char **argv) {
                         if (input_rate == ulong_limits::max())
                             goto ENTER_FAILED;
 
-                        pkt_h.set_rate_limit_kBps(input_rate);
                         pkt_h.set_drop_packet(false);
+                        pkt_h.set_rate_limit_kBps(input_rate);
 
                         status_bar.clear_input_buf();
                         status_bar.set_pkt_policy(StatusBar::PktPolicy::LimitRate);
