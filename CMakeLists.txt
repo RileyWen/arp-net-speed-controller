@@ -20,7 +20,8 @@ add_executable(ARP_Spoofer main.cpp
         concurrent_queue/headers/concurrent_queue.h
         concurrent_queue/headers/semaphore.h
         concurrent_queue/sources/semaphore.cpp
-        ncurses_gui/sources/StatusBar.cpp ncurses_gui/headers/StatusBar.h)
+        ncurses_gui/sources/StatusBar.cpp ncurses_gui/headers/StatusBar.h
+        ncurses_gui/sources/CommandLineArgParsing.cpp ncurses_gui/headers/CommandLineArgParsing.h)
 
 target_link_libraries(ARP_Spoofer ${PCAP_LIBRARY} ${CURSES_LIBRARY})
 

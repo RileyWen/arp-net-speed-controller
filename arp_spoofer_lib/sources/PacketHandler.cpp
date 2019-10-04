@@ -150,24 +150,38 @@ void PacketHandler::start_forwarding_thread() {
 
     auto packet_forwarding_lambda_f = [this]
             (bool &to_stop_forwarding, pkt_queue &pkt_q) {
+        int before_seq = concurrent_queue<int>::DEFAULT_SEQ;
         while (!to_stop_forwarding) {
-            auto pkt = pkt_q.pop_front();
-            auto len = pkt.len;
 
-            if (pcap_sendpacket(m_adapter,
-                                (const u_char *) pkt.packet_ptr,
-                                pkt.len
-            ) < 0) {
-                sprintf(forwarding_t_buf, "[packet_handler_f] pkt.len: %-4d | Forwarding Error: ", len);
-                strcat(forwarding_t_buf, pcap_geterr(m_adapter));
-                m_output_queue.push_back(string(forwarding_t_buf));
-            } else {
-                // delete is written here in 'else' branch because
-                //  'pcap_sendpacket' must have freed the 'pkt_ptr' once when
-                //  it failed to send the packet!
-                // if we still free 'pkt_ptr' when 'pcap_sendpacket' fails,
-                //  double free will be caused.
-                delete[] pkt.packet_ptr;
+            // check if any new output arrives
+            if (before_seq == pkt_q.m_updated_seq) {
+                std::this_thread::yield();
+                continue;
+            }
+
+            // get all new outputs
+            before_seq = pkt_q.m_updated_seq;
+            queue<_to_farward_pkt> ret_q = pkt_q.pop_all();
+            while (!ret_q.empty()) {
+                _to_farward_pkt pkt = ret_q.front();
+                ret_q.pop();
+                auto len = pkt.len;
+
+                if (pcap_sendpacket(m_adapter,
+                                    (const u_char *) pkt.packet_ptr,
+                                    pkt.len
+                ) < 0) {
+                    sprintf(forwarding_t_buf, "[packet_handler_f] pkt.len: %-4d | Forwarding Error: ", len);
+                    strcat(forwarding_t_buf, pcap_geterr(m_adapter));
+                    m_output_queue.push_back(string(forwarding_t_buf));
+                } else {
+                    // delete is written here in 'else' branch because
+                    //  'pcap_sendpacket' must have freed the 'pkt_ptr' once when
+                    //  it failed to send the packet!
+                    // if we still free 'pkt_ptr' when 'pcap_sendpacket' fails,
+                    //  double free will be caused.
+                    delete[] pkt.packet_ptr;
+                }
             }
         }
     };
@@ -185,8 +199,8 @@ void PacketHandler::stop_forwarding_thread() {
     m_to_stop_forwarding = false;
 }
 
-void PacketHandler::set_rate_limit_kBps(int v) {
-    m_rate_limit_kBps = long(v) * 1024;
+void PacketHandler::set_rate_limit_kBps(u_long v) {
+    m_rate_limit_kBps = v * 1024;
 }
 
 const unsigned long &PacketHandler::get_rate_cref() const {

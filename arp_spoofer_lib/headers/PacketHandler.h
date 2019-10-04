@@ -38,7 +38,7 @@ public:
 
     void set_drop_packet(bool v);
 
-    void set_rate_limit_kBps(int v);
+    void set_rate_limit_kBps(u_long v);
 
     const unsigned long &get_rate_cref() const;
 

@@ -20,9 +20,10 @@ private:
 
 public:
     int m_updated_seq;
+    static constexpr int DEFAULT_SEQ = -233;
 
     explicit concurrent_queue(int capacity)
-            : m_capacity(capacity), m_size(0), m_updated_seq(0) {}
+            : m_capacity(capacity), m_size(0), m_updated_seq(DEFAULT_SEQ) {}
 
     void push_back(const T &element) {
         unique_lock<mutex> lock(m_mtx);

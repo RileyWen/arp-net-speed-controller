@@ -35,7 +35,7 @@ string StatusBar::get_status_bar_str(int win_length) {
         }
         case PktPolicy::LimitRate: {
             char tmp_buf[64];
-            snprintf(tmp_buf, 64, "[Rate Limiting Mode]: Limit to %6lu KBps", m_rate_cref);
+            snprintf(tmp_buf, 64, "[Rate Limiting Mode]: Limit to %6lu KBps", m_rate_cref / 1024);
             int tmp_buf_len = strlen(tmp_buf);
             status_bar_str.append(tmp_buf);
             status_bar_str.append(win_length - tmp_buf_len - echo_mode_shortcut_help.size(), ' ');
